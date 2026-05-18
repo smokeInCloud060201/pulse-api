@@ -205,3 +205,47 @@ fn get_request_internal(db: &rusqlite::Connection, id: &str) -> Option<ApiReques
         },
     ).optional().unwrap_or(None)
 }
+
+#[tauri::command]
+pub fn duplicate_request(state: State<'_, DbState>, id: String) -> Result<ApiRequest, String> {
+    let db = state.db.lock().map_err(|e| e.to_string())?;
+
+    let req = get_request_internal(&db, &id).ok_or("Request not found")?;
+
+    let new_id = Uuid::new_v4().to_string();
+    let new_name = format!("{} Copy", req.name);
+
+    let max_sort: i32 = db.query_row(
+        "SELECT COALESCE(MAX(sort_order), 0) FROM requests WHERE collection_id = ?1 AND IFNULL(folder_id, '') = IFNULL(?2, '')",
+        rusqlite::params![req.collection_id, req.folder_id],
+        |row| row.get(0),
+    ).unwrap_or(0);
+
+    let new_sort = max_sort + 1;
+
+    db.execute(
+        "INSERT INTO requests (id, folder_id, collection_id, name, protocol, method, url, headers, query_params, body_type, body_content, pre_script, post_script, sort_order, proto_file, grpc_service, grpc_method)
+         VALUES (?1, ?2, ?3, ?4, ?5, ?6, ?7, ?8, ?9, ?10, ?11, ?12, ?13, ?14, ?15, ?16, ?17)",
+        rusqlite::params![
+            new_id,
+            req.folder_id,
+            req.collection_id,
+            new_name,
+            req.protocol,
+            req.method,
+            req.url,
+            req.headers,
+            req.query_params,
+            req.body_type,
+            req.body_content,
+            req.pre_script,
+            req.post_script,
+            new_sort,
+            req.proto_file,
+            req.grpc_service,
+            req.grpc_method
+        ],
+    ).map_err(|e| e.to_string())?;
+
+    get_request_internal(&db, &new_id).ok_or("Failed to retrieve duplicated request".to_string())
+}

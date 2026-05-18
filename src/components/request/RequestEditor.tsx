@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useCallback } from 'react';
 import { useTabStore } from '../../stores/tabStore';
 import { useRequestStore } from '../../stores/requestStore';
 import { useEnvironmentStore } from '../../stores/environmentStore';
@@ -11,6 +11,7 @@ import { listen, UnlistenFn } from '@tauri-apps/api/event';
 import { GraphQLEditor } from './GraphQLEditor';
 import { GrpcEditor } from './GrpcEditor';
 import { WebSocketBody, WebSocketResponse, WsMessage } from './WebSocketEditor';
+import { AuthEditor } from './AuthEditor';
 import Editor from '@monaco-editor/react';
 import './RequestEditor.css';
 
@@ -47,13 +48,13 @@ export const RequestEditor: React.FC<RequestEditorProps> = ({ requestId }) => {
     updateTabRequest(updatedReq);
   };
 
-  const saveRequest = async () => {
+  const saveRequest = useCallback(async () => {
     if (!request) return;
     await updateRequest(request);
     updateTabRequest({ ...request });
-  };
+  }, [request, updateRequest, updateTabRequest]);
 
-  const handleSend = async () => {
+  const handleSend = useCallback(async () => {
     if (!request) return;
     setIsLoading(true);
     try {
@@ -65,11 +66,26 @@ export const RequestEditor: React.FC<RequestEditorProps> = ({ requestId }) => {
     } finally {
       setIsLoading(false);
     }
-  };
+  }, [request, activeEnvironmentId, saveRequest]);
 
   const handleBodyChange = (value: string | undefined) => {
     handleRequestChange({ ...request, body_content: value || '' });
   };
+
+  React.useEffect(() => {
+    const handleKeyDown = (e: KeyboardEvent) => {
+      if ((e.metaKey || e.ctrlKey) && e.key === 'Enter') {
+        e.preventDefault();
+        handleSend();
+      } else if ((e.metaKey || e.ctrlKey) && e.key === 's') {
+        e.preventDefault();
+        saveRequest();
+      }
+    };
+
+    window.addEventListener('keydown', handleKeyDown);
+    return () => window.removeEventListener('keydown', handleKeyDown);
+  }, [handleSend, saveRequest]);
 
   React.useEffect(() => {
     let unlisten: UnlistenFn | undefined;
@@ -217,6 +233,9 @@ export const RequestEditor: React.FC<RequestEditorProps> = ({ requestId }) => {
             <div className={`req-tab ${activeTab === 'params' ? 'active' : ''}`} onClick={() => setActiveTab('params')}>
               Params
             </div>
+            <div className={`req-tab ${activeTab === 'auth' ? 'active' : ''}`} onClick={() => setActiveTab('auth')}>
+              Auth
+            </div>
             <div
               className={`req-tab ${activeTab === 'headers' ? 'active' : ''}`}
               onClick={() => setActiveTab('headers')}
@@ -239,6 +258,12 @@ export const RequestEditor: React.FC<RequestEditorProps> = ({ requestId }) => {
               <KeyValueEditor
                 items={safeParseKV(request.query_params)}
                 onChange={items => handleRequestChange({ ...request, query_params: JSON.stringify(items) })}
+              />
+            )}
+            {activeTab === 'auth' && (
+              <AuthEditor
+                headers={safeParseKV(request.headers)}
+                onChange={items => handleRequestChange({ ...request, headers: JSON.stringify(items) })}
               />
             )}
             {activeTab === 'headers' && (

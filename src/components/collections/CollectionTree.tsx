@@ -1,15 +1,15 @@
 import React, { useEffect } from 'react';
-import { Folder as FolderIcon, ChevronRight, ChevronDown, Plus, Trash2, Download } from 'lucide-react';
+import { Folder as FolderIcon, ChevronRight, ChevronDown, Plus, Trash2, Download, Copy } from 'lucide-react';
 import { useCollectionStore } from '../../stores/collectionStore';
 import { useRequestStore } from '../../stores/requestStore';
 import { useTabStore } from '../../stores/tabStore';
 import { Folder } from '../../types/collection';
 import { ApiRequest } from '../../types/request';
 
-export const CollectionTree: React.FC = () => {
+export const CollectionTree: React.FC<{ searchTerm?: string }> = ({ searchTerm = '' }) => {
   const { collections, folders, loadCollections, addCollection, deleteCollection, addFolder, deleteFolder } =
     useCollectionStore();
-  const { requests, loadRequests, createRequest, deleteRequest } = useRequestStore();
+  const { requests, loadRequests, createRequest, deleteRequest, duplicateRequest } = useRequestStore();
   const { openTab } = useTabStore();
   const [expanded, setExpanded] = React.useState<Record<string, boolean>>({});
 
@@ -26,6 +26,36 @@ export const CollectionTree: React.FC = () => {
     e.stopPropagation();
     setExpanded(prev => ({ ...prev, [id]: !prev[id] }));
   };
+
+  React.useEffect(() => {
+    if (searchTerm) {
+      const lowerSearch = searchTerm.toLowerCase();
+      const newExpanded = { ...expanded };
+      let hasChanges = false;
+      collections.forEach(col => {
+        const colRequests = requests[col.id] || [];
+        const colFolders = folders[col.id] || [];
+        const hasReqMatch = colRequests.some(r => r.name.toLowerCase().includes(lowerSearch));
+        const hasFolderMatch = colFolders.some(f => f.name.toLowerCase().includes(lowerSearch));
+        if (hasReqMatch || hasFolderMatch) {
+          if (!newExpanded[col.id]) {
+            newExpanded[col.id] = true;
+            hasChanges = true;
+          }
+        }
+        colFolders.forEach(folder => {
+          const folderRequests = colRequests.filter(r => r.folder_id === folder.id);
+          const hasFolderReqMatch = folderRequests.some(r => r.name.toLowerCase().includes(lowerSearch));
+          if (hasFolderReqMatch && !newExpanded[folder.id]) {
+            newExpanded[folder.id] = true;
+            hasChanges = true;
+          }
+        });
+      });
+      if (hasChanges) setExpanded(newExpanded);
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [searchTerm, collections, requests, folders]);
 
   const handleAddCollection = () => {
     const name = prompt('New Collection Name:');
@@ -57,6 +87,11 @@ export const CollectionTree: React.FC = () => {
   const handleDeleteRequest = (req: ApiRequest, e: React.MouseEvent) => {
     e.stopPropagation();
     if (confirm('Delete this request?')) deleteRequest(req.id, req.collection_id);
+  };
+
+  const handleDuplicateRequest = (req: ApiRequest, e: React.MouseEvent) => {
+    e.stopPropagation();
+    duplicateRequest(req.id, req.collection_id);
   };
 
   const handleExportCollection = (colId: string, e: React.MouseEvent) => {
@@ -124,7 +159,10 @@ export const CollectionTree: React.FC = () => {
           {req.method}
         </span>
         <span style={{ flex: 1, fontSize: '13px' }}>{req.name || 'Untitled'}</span>
-        <button className="icon-btn-small" onClick={e => handleDeleteRequest(req, e)}>
+        <button className="icon-btn-small" onClick={e => handleDuplicateRequest(req, e)} title="Duplicate">
+          <Copy size={12} />
+        </button>
+        <button className="icon-btn-small" onClick={e => handleDeleteRequest(req, e)} title="Delete">
           <Trash2 size={12} />
         </button>
       </div>
@@ -132,8 +170,16 @@ export const CollectionTree: React.FC = () => {
   };
 
   const renderFolder = (folder: Folder, allFolders: Folder[]) => {
-    const isExpanded = expanded[folder.id];
+    const lowerSearch = searchTerm.toLowerCase();
+    const isExpanded = expanded[folder.id] || !!searchTerm;
     const children = allFolders.filter(f => f.parent_folder_id === folder.id);
+    const folderRequests = (requests[folder.collection_id] || []).filter(r => r.folder_id === folder.id);
+
+    const matchFolder = folder.name.toLowerCase().includes(lowerSearch);
+    const matchChildren = children.some(c => c.name.toLowerCase().includes(lowerSearch));
+    const matchRequests = folderRequests.some(r => r.name.toLowerCase().includes(lowerSearch));
+
+    if (searchTerm && !matchFolder && !matchChildren && !matchRequests) return null;
 
     return (
       <div key={folder.id} style={{ paddingLeft: 16 }}>
@@ -153,7 +199,7 @@ export const CollectionTree: React.FC = () => {
           </button>
         </div>
         {isExpanded && children.map(child => renderFolder(child, allFolders))}
-        {isExpanded && (requests[folder.collection_id] || []).filter(r => r.folder_id === folder.id).map(renderRequest)}
+        {isExpanded && folderRequests.filter(r => r.name.toLowerCase().includes(lowerSearch)).map(renderRequest)}
       </div>
     );
   };
@@ -184,9 +230,18 @@ export const CollectionTree: React.FC = () => {
       </div>
 
       {collections.map(col => {
-        const isExpanded = expanded[col.id];
+        const lowerSearch = searchTerm.toLowerCase();
+        const isExpanded = expanded[col.id] || !!searchTerm;
         const colFolders = folders[col.id] || [];
+        const colRequests = requests[col.id] || [];
         const rootFolders = colFolders.filter(f => !f.parent_folder_id);
+        const rootRequests = colRequests.filter(r => !r.folder_id);
+
+        const matchCol = col.name.toLowerCase().includes(lowerSearch);
+        const matchFolders = colFolders.some(f => f.name.toLowerCase().includes(lowerSearch));
+        const matchRequests = colRequests.some(r => r.name.toLowerCase().includes(lowerSearch));
+
+        if (searchTerm && !matchCol && !matchFolders && !matchRequests) return null;
 
         return (
           <div key={col.id}>
@@ -213,7 +268,7 @@ export const CollectionTree: React.FC = () => {
             </div>
 
             {isExpanded && rootFolders.map(folder => renderFolder(folder, colFolders))}
-            {isExpanded && (requests[col.id] || []).filter(r => !r.folder_id).map(renderRequest)}
+            {isExpanded && rootRequests.filter(r => r.name.toLowerCase().includes(lowerSearch)).map(renderRequest)}
           </div>
         );
       })}

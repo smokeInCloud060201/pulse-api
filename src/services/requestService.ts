@@ -20,5 +20,9 @@ export const requestService = {
 
   executeRequest: async (id: string, environmentId?: string | null): Promise<ApiResponse> => {
     return invoke('execute_request', { id, environmentId });
+  },
+
+  duplicateRequest: async (id: string): Promise<ApiRequest> => {
+    return invoke('duplicate_request', { id });
   }
 };

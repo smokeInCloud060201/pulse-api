@@ -27,6 +27,25 @@
   --font-mono: 'JetBrains Mono', 'Fira Code', monospace;
 }
 
+body[data-theme='light'] {
+  --bg-base: 220 20% 98%;
+  --bg-surface: 0 0% 100%;
+  --bg-panel: 220 20% 94%;
+  --bg-hover: 220 20% 90%;
+
+  --text-main: 224 71% 4%;
+  --text-muted: 215 20% 45%;
+  --text-placeholder: 215 20% 65%;
+
+  --border-light: 220 20% 88%;
+  --border-focus: 262 83% 58%;
+
+  /* Keep primary colors same or adjust slightly */
+  --primary: 262 83% 58%;
+  --primary-hover: 262 83% 68%;
+  --accent: 316 73% 52%;
+}
+
 * {
   box-sizing: border-box;
   margin: 0;

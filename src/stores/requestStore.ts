@@ -9,6 +9,7 @@ interface RequestState {
   createRequest: (collectionId: string, folderId: string | null, name: string) => Promise<ApiRequest>;
   updateRequest: (request: ApiRequest) => Promise<void>;
   deleteRequest: (id: string, collectionId: string) => Promise<void>;
+  duplicateRequest: (id: string, collectionId: string) => Promise<ApiRequest>;
 }
 
 export const useRequestStore = create<RequestState>((set, get) => ({
@@ -38,5 +39,11 @@ export const useRequestStore = create<RequestState>((set, get) => ({
   deleteRequest: async (id: string, collectionId: string) => {
     await requestService.deleteRequest(id);
     await get().loadRequests(collectionId);
+  },
+
+  duplicateRequest: async (id: string, collectionId: string) => {
+    const newReq = await requestService.duplicateRequest(id);
+    await get().loadRequests(collectionId);
+    return newReq;
   }
 }));
