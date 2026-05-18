@@ -1,0 +1,88 @@
+.tab-bar {
+  display: flex;
+  height: 40px;
+  background-color: hsl(var(--bg-base));
+  border-bottom: 1px solid hsl(var(--border-light));
+  align-items: center;
+  justify-content: space-between;
+}
+
+.tabs-scroll {
+  display: flex;
+  flex: 1;
+  overflow-x: auto;
+  overflow-y: hidden;
+  height: 100%;
+}
+
+.tab {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 0 12px;
+  height: 100%;
+  border-right: 1px solid hsl(var(--border-light));
+  border-top: 2px solid transparent;
+  cursor: pointer;
+  color: hsl(var(--text-muted));
+  min-width: 120px;
+  max-width: 200px;
+  background-color: hsl(var(--bg-base));
+  transition: all 0.2s;
+}
+
+.tab:hover {
+  background-color: hsl(var(--bg-hover));
+}
+
+.tab.active {
+  background-color: hsl(var(--bg-surface));
+  color: hsl(var(--text-main));
+  border-top-color: hsl(var(--primary));
+}
+
+.tab-title {
+  font-size: 0.85rem;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  flex: 1;
+}
+
+.tab-close {
+  background: transparent;
+  border: none;
+  color: transparent;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 2px;
+  border-radius: 4px;
+}
+
+.tab:hover .tab-close, .tab.active .tab-close {
+  color: hsl(var(--text-muted));
+}
+
+.tab-close:hover {
+  background-color: hsla(0, 0%, 100%, 0.1);
+  color: hsl(var(--text-main)) !important;
+}
+
+.env-selector {
+  padding: 0 16px;
+  display: flex;
+  align-items: center;
+}
+
+.env-select {
+  background: hsl(var(--bg-hover));
+  border: 1px solid hsl(var(--border-light));
+  color: hsl(var(--text-main));
+  padding: 4px 8px;
+  border-radius: 4px;
+  font-size: 0.8rem;
+  outline: none;
+  cursor: pointer;
+}

@@ -1,0 +1,86 @@
+:root {
+  /* HSL Color Palette - Dark Premium Theme */
+  --bg-base: 224 71% 4%;
+  --bg-surface: 224 71% 8%;
+  --bg-panel: 224 71% 12%;
+  --bg-hover: 224 71% 18%;
+  
+  --primary: 262 83% 58%;
+  --primary-hover: 262 83% 68%;
+  --accent: 316 73% 52%;
+  
+  --text-main: 210 40% 98%;
+  --text-muted: 215 20% 65%;
+  --text-placeholder: 215 20% 45%;
+
+  --border-light: 224 71% 20%;
+  --border-focus: 262 83% 58%;
+
+  /* Method Colors */
+  --method-get: 142 71% 45%;
+  --method-post: 47 100% 50%;
+  --method-put: 217 91% 60%;
+  --method-delete: 348 83% 47%;
+  --method-patch: 270 95% 75%;
+
+  --font-sans: 'Inter', system-ui, -apple-system, sans-serif;
+  --font-mono: 'JetBrains Mono', 'Fira Code', monospace;
+}
+
+* {
+  box-sizing: border-box;
+  margin: 0;
+  padding: 0;
+}
+
+body {
+  background-color: hsl(var(--bg-base));
+  color: hsl(var(--text-main));
+  font-family: var(--font-sans);
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+  overflow: hidden;
+  user-select: none; /* Desktop app feel */
+}
+
+/* Scrollbars */
+::-webkit-scrollbar {
+  width: 8px;
+  height: 8px;
+}
+::-webkit-scrollbar-track {
+  background: transparent;
+}
+::-webkit-scrollbar-thumb {
+  background: hsl(var(--bg-hover));
+  border-radius: 4px;
+}
+::-webkit-scrollbar-thumb:hover {
+  background: hsl(var(--border-light));
+}
+
+.app-container {
+  display: flex;
+  height: 100vh;
+  width: 100vw;
+  flex-direction: column;
+}
+
+.main-content {
+  display: flex;
+  flex: 1;
+  overflow: hidden;
+}
+
+.content-area {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  background-color: hsl(var(--bg-surface));
+  border-top-left-radius: 12px;
+  border-left: 1px solid hsl(var(--border-light));
+  border-top: 1px solid hsl(var(--border-light));
+  box-shadow: -4px -4px 24px rgba(0,0,0,0.2);
+  margin-top: 8px;
+  overflow: hidden;
+}

@@ -1,0 +1,28 @@
+import { invoke } from '@tauri-apps/api/core';
+import { Collection, Folder } from '../types/collection';
+
+export const collectionService = {
+  getCollections: async (): Promise<Collection[]> => {
+    return invoke('get_collections');
+  },
+
+  createCollection: async (name: string, description?: string): Promise<Collection> => {
+    return invoke('create_collection', { name, description });
+  },
+
+  deleteCollection: async (id: string): Promise<void> => {
+    return invoke('delete_collection', { id });
+  },
+
+  getFolders: async (collectionId: string): Promise<Folder[]> => {
+    return invoke('get_folders', { collectionId });
+  },
+
+  createFolder: async (collectionId: string, parentFolderId: string | null, name: string): Promise<Folder> => {
+    return invoke('create_folder', { collectionId, parentFolderId, name });
+  },
+
+  deleteFolder: async (id: string): Promise<void> => {
+    return invoke('delete_folder', { id });
+  }
+};
