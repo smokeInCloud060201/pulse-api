@@ -3,6 +3,7 @@ import { Sidebar } from "./components/layout/Sidebar";
 import { TabBar } from "./components/layout/TabBar";
 import { RequestEditor } from "./components/request/RequestEditor";
 import { useTabStore } from "./stores/tabStore";
+import { EnvSelector } from "./components/layout/EnvSelector";
 import "./styles/theme.css";
 
 function App() {
@@ -17,7 +18,10 @@ function App() {
       <div className="main-content">
         <Sidebar />
         <div className="content-area">
-          <TabBar />
+          <div style={{ display: 'flex', alignItems: 'center', borderBottom: '1px solid var(--border-color)' }}>
+            <div style={{ flex: 1 }}><TabBar /></div>
+            <EnvSelector />
+          </div>
           {!isInitialized ? (
             <div style={{ padding: "24px", flex: 1 }}>Loading...</div>
           ) : tabs.length === 0 ? (

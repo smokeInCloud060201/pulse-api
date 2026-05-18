@@ -34,4 +34,5 @@ export interface ApiResponse {
   headers: [string, string][];
   body: string;
   body_type: string;
+  console_logs?: string[] | null;
 }

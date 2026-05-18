@@ -24,7 +24,11 @@ pub fn run() {
             commands::request::get_requests,
             commands::request::update_request,
             commands::request::delete_request,
-            commands::request::execute_request
+            commands::request::execute_request,
+            commands::environment::create_environment,
+            commands::environment::get_environments,
+            commands::environment::update_environment,
+            commands::environment::delete_environment
         ])
         .run(tauri::generate_context!())
         .expect("error while running tauri application");

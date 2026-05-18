@@ -18,7 +18,7 @@ export const requestService = {
     return invoke('delete_request', { id });
   },
 
-  executeRequest: async (id: string): Promise<ApiResponse> => {
-    return invoke('execute_request', { id });
+  executeRequest: async (id: string, environmentId?: string | null): Promise<ApiResponse> => {
+    return invoke('execute_request', { id, environmentId });
   }
 };

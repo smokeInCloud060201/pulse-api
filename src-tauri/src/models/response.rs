@@ -9,4 +9,5 @@ pub struct ApiResponse {
     pub headers: Vec<(String, String)>,
     pub body: String,
     pub body_type: String, // "json", "xml", "html", "text", etc.
+    pub console_logs: Option<Vec<String>>,
 }

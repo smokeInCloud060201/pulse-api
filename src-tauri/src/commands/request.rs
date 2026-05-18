@@ -96,13 +96,67 @@ pub fn delete_request(state: State<'_, DbState>, id: String) -> Result<(), Strin
 }
 
 #[tauri::command]
-pub async fn execute_request(state: State<'_, DbState>, id: String) -> Result<ApiResponse, String> {
-    let request = {
+pub async fn execute_request(state: State<'_, DbState>, id: String, environment_id: Option<String>) -> Result<ApiResponse, String> {
+    let (request, env) = {
         let db = state.db.lock().map_err(|e| e.to_string())?;
-        get_request_internal(&db, &id).ok_or_else(|| "Request not found".to_string())?
+        let req = get_request_internal(&db, &id).ok_or_else(|| "Request not found".to_string())?;
+        
+        let mut environment = None;
+        if let Some(env_id) = environment_id {
+            if let Ok(mut stmt) = db.prepare("SELECT id, name, created_at, updated_at FROM environments WHERE id = ?1") {
+                if let Ok(env_row) = stmt.query_row([&env_id], |row| {
+                    Ok(crate::models::environment::Environment {
+                        id: row.get(0).unwrap_or_default(),
+                        name: row.get(1).unwrap_or_default(),
+                        created_at: row.get(2).unwrap_or_default(),
+                        updated_at: row.get(3).unwrap_or_default(),
+                        variables: vec![]
+                    })
+                }) {
+                    let mut e = env_row;
+                    if let Ok(mut var_stmt) = db.prepare("SELECT id, key, value, var_type, enabled FROM env_variables WHERE environment_id = ?1") {
+                        let _ = var_stmt.query_map([&e.id], |row| {
+                            let enabled_int: i32 = row.get(4).unwrap_or(1);
+                            Ok(crate::models::environment::EnvVariable {
+                                id: row.get(0).unwrap_or_default(),
+                                environment_id: e.id.clone(),
+                                key: row.get(1).unwrap_or_default(),
+                                value: row.get(2).unwrap_or_default(),
+                                var_type: row.get(3).unwrap_or_default(),
+                                enabled: enabled_int == 1,
+                            })
+                        }).map(|iter| {
+                            for var in iter {
+                                if let Ok(v) = var {
+                                    e.variables.push(v);
+                                }
+                            }
+                        });
+                    }
+                    environment = Some(e);
+                }
+            }
+        }
+        (req, environment)
     };
 
-    let response = execute_request_internal(&request).await?;
+    let (response, updated_env) = execute_request_internal(request.clone(), env).await?;
+    
+    // Save environment updates
+    if let Some(env) = updated_env {
+        if !env.id.is_empty() {
+            let mut db = state.db.lock().map_err(|e| e.to_string())?;
+            let tx = db.transaction().map_err(|e| e.to_string())?;
+            
+            let _ = tx.execute("DELETE FROM env_variables WHERE environment_id = ?1", [&env.id]);
+            if let Ok(mut stmt) = tx.prepare("INSERT INTO env_variables (id, environment_id, key, value, var_type, enabled) VALUES (?1, ?2, ?3, ?4, ?5, ?6)") {
+                for var in env.variables {
+                    let _ = stmt.execute(rusqlite::params![var.id, var.environment_id, var.key, var.value, var.var_type, if var.enabled { 1 } else { 0 }]);
+                }
+            }
+            let _ = tx.commit();
+        }
+    }
     
     // Save to history
     let history_id = Uuid::new_v4().to_string();

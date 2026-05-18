@@ -47,4 +47,21 @@ CREATE TABLE IF NOT EXISTS request_history (
     response_size_bytes INTEGER,
     created_at TEXT NOT NULL DEFAULT (datetime('now'))
 );
+
+CREATE TABLE IF NOT EXISTS environments (
+    id TEXT PRIMARY KEY,
+    name TEXT NOT NULL,
+    created_at TEXT NOT NULL DEFAULT (datetime('now')),
+    updated_at TEXT NOT NULL DEFAULT (datetime('now'))
+);
+
+CREATE TABLE IF NOT EXISTS env_variables (
+    id TEXT PRIMARY KEY,
+    environment_id TEXT NOT NULL REFERENCES environments(id) ON DELETE CASCADE,
+    key TEXT NOT NULL,
+    value TEXT NOT NULL DEFAULT '',
+    var_type TEXT NOT NULL DEFAULT 'default',
+    enabled INTEGER NOT NULL DEFAULT 1
+);
+
 "#;

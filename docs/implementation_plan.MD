@@ -437,20 +437,20 @@ flowchart LR
 
 ---
 
-### Sprint 3 — Environment Variables & Scripting *(Week 5-6)*
+### Sprint 3 — Environment Variables & Scripting *(Week 5-6)* - **[DONE]**
 
-| Task | Details |
-|------|---------|
-| Environment CRUD | Create, edit, delete environments |
-| Variable resolver | `{{variable}}` substitution in URL, headers, body |
-| Environment selector UI | Dropdown in header, quick-edit panel |
-| Boa JS engine integration | Sandboxed script execution |
-| `pm.*` API implementation | `pm.environment.set/get`, `pm.response.json()`, `pm.variables` |
-| Script editor UI | Monaco editor with JS syntax highlighting |
-| Pre/Post script execution | Integrated into request execution flow |
-| Console output panel | Show `console.log` output from scripts |
+| Task | Details | Status |
+|------|---------|--------|
+| Environment CRUD | Create, edit, delete environments | ✅ Done |
+| Variable resolver | `{{variable}}` substitution in URL, headers, body | ✅ Done |
+| Environment selector UI | Dropdown in header, quick-edit panel | ✅ Done |
+| Boa JS engine integration | Sandboxed script execution | ✅ Done |
+| `pm.*` API implementation | `pm.environment.set/get`, `pm.response.json()`, `pm.variables` | ✅ Done |
+| Script editor UI | Monaco editor with JS syntax highlighting | ✅ Done |
+| Pre/Post script execution | Integrated into request execution flow | ✅ Done |
+| Console output panel | Show `console.log` output from scripts | ✅ Done |
 
-**Deliverable**: Environment variables + scripting engine working end-to-end.
+**Deliverable**: Environment variables + scripting engine working end-to-end. - **[COMPLETED]**
 
 ---
 

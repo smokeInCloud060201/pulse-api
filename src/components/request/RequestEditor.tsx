@@ -1,6 +1,7 @@
 import React, { useState } from 'react';
 import { useTabStore } from '../../stores/tabStore';
 import { useRequestStore } from '../../stores/requestStore';
+import { useEnvironmentStore } from '../../stores/environmentStore';
 import { requestService } from '../../services/requestService';
 import { ApiRequest, ApiResponse, KeyValuePair } from '../../types/request';
 import { RequestConfig } from './RequestConfig';
@@ -15,6 +16,7 @@ interface RequestEditorProps {
 export const RequestEditor: React.FC<RequestEditorProps> = ({ requestId }) => {
   const { tabs, updateTabRequest } = useTabStore();
   const { updateRequest } = useRequestStore();
+  const { activeEnvironmentId } = useEnvironmentStore();
   
   const tab = tabs.find(t => t.id === requestId);
   const request = tab?.request;
@@ -45,7 +47,7 @@ export const RequestEditor: React.FC<RequestEditorProps> = ({ requestId }) => {
     setIsLoading(true);
     try {
       await saveRequest();
-      const res = await requestService.executeRequest(request.id);
+      const res = await requestService.executeRequest(request.id, activeEnvironmentId);
       setResponse(res);
     } catch (e) {
       console.error(e);
@@ -74,6 +76,8 @@ export const RequestEditor: React.FC<RequestEditorProps> = ({ requestId }) => {
             <div className={`req-tab ${activeTab === 'params' ? 'active' : ''}`} onClick={() => setActiveTab('params')}>Params</div>
             <div className={`req-tab ${activeTab === 'headers' ? 'active' : ''}`} onClick={() => setActiveTab('headers')}>Headers</div>
             <div className={`req-tab ${activeTab === 'body' ? 'active' : ''}`} onClick={() => setActiveTab('body')}>Body</div>
+            <div className={`req-tab ${activeTab === 'prereq' ? 'active' : ''}`} onClick={() => setActiveTab('prereq')}>Pre-request Script</div>
+            <div className={`req-tab ${activeTab === 'tests' ? 'active' : ''}`} onClick={() => setActiveTab('tests')}>Tests</div>
           </div>
           
           <div style={{ flex: 1, overflow: 'auto', padding: '0 16px' }}>
@@ -97,6 +101,30 @@ export const RequestEditor: React.FC<RequestEditorProps> = ({ requestId }) => {
                   theme="vs-dark"
                   value={request.body_content || ''}
                   onChange={handleBodyChange}
+                  options={{ minimap: { enabled: false }, fontSize: 13, scrollBeyondLastLine: false }}
+                />
+              </div>
+            )}
+            {activeTab === 'prereq' && (
+              <div style={{ height: '100%', paddingTop: 16 }}>
+                <Editor 
+                  height="100%" 
+                  defaultLanguage="javascript" 
+                  theme="vs-dark"
+                  value={request.pre_script || ''}
+                  onChange={(val) => handleRequestChange({ ...request, pre_script: val || '' })}
+                  options={{ minimap: { enabled: false }, fontSize: 13, scrollBeyondLastLine: false }}
+                />
+              </div>
+            )}
+            {activeTab === 'tests' && (
+              <div style={{ height: '100%', paddingTop: 16 }}>
+                <Editor 
+                  height="100%" 
+                  defaultLanguage="javascript" 
+                  theme="vs-dark"
+                  value={request.post_script || ''}
+                  onChange={(val) => handleRequestChange({ ...request, post_script: val || '' })}
                   options={{ minimap: { enabled: false }, fontSize: 13, scrollBeyondLastLine: false }}
                 />
               </div>
@@ -130,6 +158,16 @@ export const RequestEditor: React.FC<RequestEditorProps> = ({ requestId }) => {
                     options={{ readOnly: true, minimap: { enabled: false }, fontSize: 13, wordWrap: 'on' }}
                   />
                 </div>
+                {response.console_logs && response.console_logs.length > 0 && (
+                  <div style={{ borderTop: '1px solid var(--border-color)', height: '150px', display: 'flex', flexDirection: 'column' }}>
+                    <div style={{ padding: '8px 16px', background: 'var(--bg-primary)', fontSize: '0.8rem', fontWeight: 600 }}>Console</div>
+                    <div style={{ flex: 1, overflow: 'auto', padding: '8px 16px', fontFamily: 'monospace', fontSize: '0.85rem' }}>
+                      {response.console_logs.map((log, i) => (
+                        <div key={i} style={{ borderBottom: '1px solid rgba(255,255,255,0.05)', padding: '4px 0' }}>{log}</div>
+                      ))}
+                    </div>
+                  </div>
+                )}
               </div>
             ) : (
               <div style={{ padding: '16px', color: 'var(--text-muted)' }}>Hit Send to get a response</div>

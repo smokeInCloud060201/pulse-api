@@ -107,5 +107,6 @@ pub async fn send_rest_request(req: &ApiRequest) -> Result<ApiResponse, String> 
         headers: res_headers,
         body: body_string,
         body_type,
+        console_logs: None,
     })
 }
