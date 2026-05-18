@@ -3,7 +3,7 @@ import { Folder as FolderIcon, ChevronRight, ChevronDown, Plus, Trash2 } from 'l
 import { useCollectionStore } from '../../stores/collectionStore';
 import { useRequestStore } from '../../stores/requestStore';
 import { useTabStore } from '../../stores/tabStore';
-import { Collection, Folder } from '../../types/collection';
+import { Folder } from '../../types/collection';
 import { ApiRequest } from '../../types/request';
 
 export const CollectionTree: React.FC = () => {

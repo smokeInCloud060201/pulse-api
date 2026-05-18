@@ -31,8 +31,8 @@ export const useTabStore = create<TabState>((set, get) => ({
   init: async () => {
     try {
       tauriStore = await load('tabs-state.json');
-      const savedTabs = await tauriStore.get<Tab[]>('tabs');
-      const savedActiveTab = await tauriStore.get<string>('activeTabId');
+      const savedTabs = (await tauriStore.get('tabs')) as Tab[] | null;
+      const savedActiveTab = (await tauriStore.get('activeTabId')) as string | null;
       
       set({ 
         tabs: savedTabs || [], 

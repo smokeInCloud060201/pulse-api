@@ -47,10 +47,30 @@ pub async fn send_rest_request(req: &ApiRequest) -> Result<ApiResponse, String> 
         }
     }
 
+    // Handle GraphQL-specific headers
+    if req.protocol == "GraphQL" {
+        header_map.insert(reqwest::header::CONTENT_TYPE, reqwest::header::HeaderValue::from_static("application/json"));
+    }
+
     let mut builder = client.request(method, &final_url).headers(header_map);
 
     // Parse body if present
-    if let Some(body_type) = &req.body_type {
+    if req.protocol == "GraphQL" {
+        if let Some(body_content) = &req.body_content {
+            if !body_content.is_empty() {
+                if let Ok(mut json) = serde_json::from_str::<serde_json::Value>(body_content) {
+                    if let Some(vars) = json.get("variables").and_then(|v| v.as_str()) {
+                        if let Ok(vars_json) = serde_json::from_str::<serde_json::Value>(vars) {
+                            json["variables"] = vars_json;
+                        }
+                    }
+                    builder = builder.body(json.to_string());
+                } else {
+                    builder = builder.body(body_content.clone());
+                }
+            }
+        }
+    } else if let Some(body_type) = &req.body_type {
         if let Some(body_content) = &req.body_content {
             if !body_content.is_empty() {
                 match body_type.as_str() {

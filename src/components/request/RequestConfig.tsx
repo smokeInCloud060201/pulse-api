@@ -15,10 +15,25 @@ const METHODS = ['GET', 'POST', 'PUT', 'DELETE', 'PATCH', 'OPTIONS', 'HEAD'];
 export const RequestConfig: React.FC<RequestConfigProps> = ({ request, onChange, onSend, isLoading }) => {
   return (
     <div className="request-config">
+      <select
+        className="protocol-select"
+        value={request.protocol || 'REST'}
+        onChange={(e) => {
+          const protocol = e.target.value;
+          const method = protocol === 'GraphQL' ? 'POST' : request.method;
+          onChange({ ...request, protocol, method });
+        }}
+        style={{ padding: '8px', border: 'none', background: 'var(--bg-secondary)', color: 'var(--text-primary)', outline: 'none', cursor: 'pointer', fontWeight: 600 }}
+      >
+        <option value="REST">REST</option>
+        <option value="GraphQL">GraphQL</option>
+        <option value="gRPC">gRPC</option>
+      </select>
       <select 
         className={`method-select method-${request.method.toLowerCase()}`}
         value={request.method}
         onChange={(e) => onChange({ ...request, method: e.target.value })}
+        disabled={request.protocol === 'GraphQL' || request.protocol === 'gRPC'}
       >
         {METHODS.map(m => (
           <option key={m} value={m}>{m}</option>

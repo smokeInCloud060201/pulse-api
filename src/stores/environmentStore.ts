@@ -15,7 +15,7 @@ interface EnvironmentState {
   deleteEnvironment: (id: string) => Promise<void>;
 }
 
-export const useEnvironmentStore = create<EnvironmentState>((set, get) => ({
+export const useEnvironmentStore = create<EnvironmentState>((set) => ({
   environments: [],
   activeEnvironmentId: null,
   loading: false,

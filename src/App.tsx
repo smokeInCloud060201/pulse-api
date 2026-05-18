@@ -1,4 +1,5 @@
-import React, { useEffect } from "react";
+import { useEffect } from "react";
+import "./monaco-setup";
 import { Sidebar } from "./components/layout/Sidebar";
 import { TabBar } from "./components/layout/TabBar";
 import { RequestEditor } from "./components/request/RequestEditor";

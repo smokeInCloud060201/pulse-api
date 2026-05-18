@@ -2,6 +2,7 @@ use crate::models::request::ApiRequest;
 use crate::models::response::ApiResponse;
 use crate::models::environment::Environment;
 use crate::adapters::rest::send_rest_request;
+use crate::adapters::grpc::send_grpc_request;
 use crate::engine::variable_resolver::resolve_variables;
 use crate::engine::script_runner::run_script;
 
@@ -25,18 +26,25 @@ pub async fn execute_request_internal(
 
     // 2. Resolve Variables
     let env_ref = env.as_ref();
-    req.url = resolve_variables(&req.url, env_ref);
-    req.headers = resolve_variables(&req.headers, env_ref);
-    req.query_params = resolve_variables(&req.query_params, env_ref);
-    req.body_content = req.body_content.map(|body| resolve_variables(&body, env_ref));
+    let resolved_url = resolve_variables(&req.url, env_ref);
+    let resolved_headers = resolve_variables(&req.headers, env_ref);
+    let resolved_params = resolve_variables(&req.query_params, env_ref);
+    let resolved_body = req.body_content.clone().map(|body| resolve_variables(&body, env_ref)).unwrap_or_default();
 
-    if req.url.is_empty() {
+    if resolved_url.is_empty() {
         return Err("URL is required".to_string());
     }
     
     // 3. Execute
+    let mut req_to_send = req.clone();
+    req_to_send.url = resolved_url;
+    req_to_send.headers = resolved_headers;
+    req_to_send.query_params = resolved_params;
+    req_to_send.body_content = Some(resolved_body);
+
     let mut response = match req.protocol.as_str() {
-        "REST" => send_rest_request(&req).await?,
+        "REST" | "GraphQL" => send_rest_request(&req_to_send).await?,
+        "gRPC" => send_grpc_request(&req_to_send).await?,
         _ => return Err(format!("Protocol {} not supported yet", req.protocol))
     };
 

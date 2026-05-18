@@ -454,16 +454,18 @@ flowchart LR
 
 ---
 
-### Sprint 4 — gRPC & GraphQL Support *(Week 7-8)*
+### Sprint 4 — gRPC & GraphQL Support *(Week 7-8)* - **[DONE]**
 
-| Task | Details |
-|------|---------|
-| gRPC adapter (`tonic`) | Unary, server-streaming calls |
-| Proto file upload & parsing | `prost-reflect` for dynamic message creation |
-| gRPC UI | Service/method selector, message editor, metadata headers |
-| GraphQL adapter | Query, mutation, variables support via `reqwest` |
-| GraphQL UI | Query editor, variables panel, response viewer |
-| Server reflection (gRPC) | Auto-discover services without proto files |
+| Task | Details | Status |
+|------|---------|--------|
+| gRPC adapter (`tonic`) | Unary, server-streaming calls | ✅ Done |
+| Proto file upload & parsing | `prost-reflect` for dynamic message creation | ✅ Done |
+| gRPC UI | Service/method selector, message editor, metadata headers | ✅ Done |
+| GraphQL adapter | Query, mutation, variables support via `reqwest` | ✅ Done |
+| GraphQL UI | Query editor, variables panel, response viewer | ✅ Done |
+| Server reflection (gRPC) | Auto-discover services without proto files | ⏳ Deferred |
+
+**Deliverable**: Multi-protocol support working natively. - **[COMPLETED]**
 
 **Deliverable**: Multi-protocol support (REST + gRPC + GraphQL).
 

@@ -6,6 +6,8 @@ import { requestService } from '../../services/requestService';
 import { ApiRequest, ApiResponse, KeyValuePair } from '../../types/request';
 import { RequestConfig } from './RequestConfig';
 import { KeyValueEditor } from './KeyValueEditor';
+import { GraphQLEditor } from './GraphQLEditor';
+import { GrpcEditor } from './GrpcEditor';
 import Editor from '@monaco-editor/react';
 import './RequestEditor.css';
 
@@ -94,15 +96,21 @@ export const RequestEditor: React.FC<RequestEditorProps> = ({ requestId }) => {
               />
             )}
             {activeTab === 'body' && (
-              <div style={{ height: '100%', paddingTop: 16 }}>
-                <Editor 
-                  height="100%" 
-                  defaultLanguage="json" 
-                  theme="vs-dark"
-                  value={request.body_content || ''}
-                  onChange={handleBodyChange}
-                  options={{ minimap: { enabled: false }, fontSize: 13, scrollBeyondLastLine: false }}
-                />
+              <div style={{ height: '100%', paddingTop: 16, display: 'flex', flexDirection: 'column' }}>
+                {request.protocol === 'GraphQL' ? (
+                  <GraphQLEditor request={request} onChange={handleBodyChange} />
+                ) : request.protocol === 'gRPC' ? (
+                  <GrpcEditor request={request} onChange={handleRequestChange} />
+                ) : (
+                  <Editor 
+                    height="100%" 
+                    defaultLanguage="json" 
+                    theme="vs-dark"
+                    value={request.body_content || ''}
+                    onChange={handleBodyChange}
+                    options={{ minimap: { enabled: false }, fontSize: 13, scrollBeyondLastLine: false }}
+                  />
+                )}
               </div>
             )}
             {activeTab === 'prereq' && (

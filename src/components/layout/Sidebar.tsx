@@ -1,5 +1,5 @@
 import React from 'react';
-import { Settings, Plus } from 'lucide-react';
+import { Settings } from 'lucide-react';
 import { CollectionTree } from '../collections/CollectionTree';
 import './Sidebar.css';
 
