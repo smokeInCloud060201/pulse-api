@@ -3,6 +3,7 @@ import { KeyValuePair } from '../../types/request';
 import { Trash2, FileUp } from 'lucide-react';
 import { open } from '@tauri-apps/plugin-dialog';
 import { Dropdown } from '../ui/Dropdown';
+import { EnvInput } from '../ui/EnvInput';
 import './RequestEditor.css';
 
 interface KeyValueEditorProps {
@@ -74,8 +75,7 @@ export const KeyValueEditor: React.FC<KeyValueEditorProps> = ({ items, onChange,
             <input type="checkbox" checked={item.enabled} onChange={e => updateItem(i, 'enabled', e.target.checked)} />
           </div>
           <div className="kv-col-key" style={{ display: 'flex', alignItems: 'center' }}>
-            <input
-              type="text"
+            <EnvInput
               placeholder="Key"
               value={item.key}
               onChange={e => updateItem(i, 'key', e.target.value)}
@@ -131,8 +131,7 @@ export const KeyValueEditor: React.FC<KeyValueEditorProps> = ({ items, onChange,
                 </button>
               </div>
             ) : (
-              <input
-                type="text"
+              <EnvInput
                 placeholder="Value"
                 value={item.value}
                 onChange={e => updateItem(i, 'value', e.target.value)}

@@ -14,6 +14,9 @@ export function parsePostmanCollection(jsonString: string): PostmanImportResult 
     const data = JSON.parse(jsonString);
 
     if (!data.info || !data.item) {
+      if (data.name && Array.isArray(data.values)) {
+        return { error: 'This appears to be a Postman Environment file. Please select the Postman Environment tab.' };
+      }
       return { error: 'Invalid Postman Collection format' };
     }
 
@@ -112,6 +115,9 @@ export function parsePostmanEnvironment(jsonString: string): PostmanEnvImportRes
   try {
     const data = JSON.parse(jsonString);
     if (!data.name || !Array.isArray(data.values)) {
+      if (data.info && data.item) {
+        return { error: 'This appears to be a Postman Collection file. Please select the Postman Collection tab.' };
+      }
       return { error: 'Invalid Postman Environment format' };
     }
 

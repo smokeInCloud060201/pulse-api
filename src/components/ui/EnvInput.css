@@ -1,0 +1,90 @@
+.env-input-container {
+  position: relative;
+  display: flex;
+  flex: 1;
+}
+
+.env-input-overlay {
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  pointer-events: none; /* Let clicks pass through to input by default */
+  overflow: hidden; /* Hide scrollbar but allow sync scrolling */
+  white-space: pre;
+  color: var(--text-primary); /* Regular text is visible through the overlay */
+  padding: 8px; /* Must match input padding */
+  font-family: inherit;
+  font-size: inherit;
+  line-height: inherit;
+  display: flex;
+  align-items: center;
+}
+
+.env-input-field {
+  flex: 1;
+  background: transparent !important;
+  caret-color: var(--text-primary);
+  color: transparent !important; /* Input text must be transparent so it doesn't overlap the overlay text */
+  position: relative;
+  z-index: 1;
+  outline: none;
+  border: none;
+}
+
+.env-input-field::placeholder {
+  color: var(--text-muted);
+}
+
+.env-input-field:focus {
+  border-color: var(--primary) !important;
+}
+
+.env-var {
+  color: var(--primary); /* Highlight color */
+  pointer-events: auto; /* Re-enable pointer events for the hover/click */
+  cursor: pointer;
+  background: rgba(var(--primary-rgb), 0.1);
+  padding: 0 2px;
+  margin: 0 -2px; /* Offset padding to avoid shifting layout */
+}
+
+.env-var:hover {
+  background: rgba(var(--primary-rgb), 0.2);
+}
+
+/* Tooltip */
+.env-input-tooltip {
+  position: fixed;
+  z-index: 9999;
+  background: var(--bg-secondary);
+  border: 1px solid var(--border-color);
+  border-radius: 4px;
+  padding: 8px 12px;
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.2);
+  min-width: 150px;
+  max-width: 300px;
+  pointer-events: none; /* So it doesn't flicker when hovering */
+}
+
+.tooltip-key {
+  font-size: 0.8rem;
+  color: var(--text-muted);
+  margin-bottom: 4px;
+}
+
+.tooltip-value {
+  font-size: 0.95rem;
+  color: var(--text-primary);
+  font-family: monospace;
+  word-break: break-all;
+}
+
+.tooltip-hint {
+  font-size: 0.75rem;
+  color: var(--primary);
+  margin-top: 6px;
+  padding-top: 6px;
+  border-top: 1px solid var(--border-color);
+}

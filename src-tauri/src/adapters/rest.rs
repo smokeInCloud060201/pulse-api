@@ -172,7 +172,15 @@ pub async fn send_rest_request(req: &ApiRequest) -> Result<ApiResponse, String> 
     }
 
     let start_time = Instant::now();
-    let response = builder.send().await.map_err(|e| e.to_string())?;
+    let response = builder.send().await.map_err(|e| {
+        if e.is_timeout() {
+            "The request timed out while waiting for a response from the server.".to_string()
+        } else if e.is_connect() {
+            "Could not connect to the server. Please check your network connection and ensure the target server is running.".to_string()
+        } else {
+            format!("The request failed. The server may be unreachable or the URL might be incorrect. ({})", e)
+        }
+    })?;
     let latency_ms = start_time.elapsed().as_millis() as u64;
 
     let status = response.status().as_u16();

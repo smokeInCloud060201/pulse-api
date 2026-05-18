@@ -621,7 +621,7 @@ export const RequestEditor: React.FC<RequestEditorProps> = ({ requestId }) => {
                 </div>
                 
                 {/* Meta info on the right side if we have a response */}
-                {response && !isLoading && (
+                {response && !isLoading && response.status !== 0 && (
                   <div style={{ display: 'flex', gap: '16px', fontSize: '0.85rem', alignItems: 'center' }}>
                     <span style={{ color: response.status < 300 ? 'hsl(var(--color-success))' : 'hsl(var(--color-danger))', fontWeight: 600 }}>
                       Status: <span style={{ fontWeight: 400 }}>{response.status} {response.status_text}</span>

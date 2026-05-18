@@ -1,10 +1,11 @@
-import React, { useEffect, useState } from 'react';
+import React, { useEffect } from 'react';
 import { useEnvironmentStore } from '../../stores/environmentStore';
+import { useUiStore } from '../../stores/uiStore';
 import { Dropdown } from '../ui/Dropdown';
 
 export const EnvSelector: React.FC = () => {
   const { environments, activeEnvironmentId, setActiveEnvironment, fetchEnvironments } = useEnvironmentStore();
-  const [showEditor, setShowEditor] = useState(false);
+  const { isEnvManagerOpen, setEnvManagerOpen } = useUiStore();
 
   useEffect(() => {
     fetchEnvironments();
@@ -25,7 +26,7 @@ export const EnvSelector: React.FC = () => {
         }}
       />
       <button
-        onClick={() => setShowEditor(true)}
+        onClick={() => setEnvManagerOpen(true)}
         style={{
           background: 'transparent',
           border: 'none',
@@ -38,7 +39,7 @@ export const EnvSelector: React.FC = () => {
         ⚙️
       </button>
 
-      {showEditor && <EnvEditorModal onClose={() => setShowEditor(false)} />}
+      {isEnvManagerOpen && <EnvEditorModal onClose={() => setEnvManagerOpen(false)} />}
     </div>
   );
 };

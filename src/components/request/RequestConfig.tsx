@@ -1,6 +1,7 @@
 import React, { useState, useRef, useEffect } from 'react';
 import { Columns, Rows, ChevronDown } from 'lucide-react';
 import { ApiRequest } from '../../types/request';
+import { EnvInput } from '../ui/EnvInput';
 import './RequestEditor.css';
 
 interface RequestConfigProps {
@@ -74,8 +75,7 @@ export const RequestConfig: React.FC<RequestConfigProps> = ({
           )}
         </div>
 
-        <input
-          type="text"
+        <EnvInput
           className="url-input"
           placeholder="Enter request URL"
           value={request.url}

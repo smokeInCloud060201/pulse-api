@@ -12,7 +12,7 @@
   "app": {
     "windows": [
       {
-        "title": "tauri-apppulse-api",
+        "title": "Pulse API",
         "width": 1400,
         "height": 800
       }
