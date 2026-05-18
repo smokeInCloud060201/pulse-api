@@ -18,6 +18,7 @@ pub fn run() {
         })
         .plugin(tauri_plugin_store::Builder::new().build())
         .plugin(tauri_plugin_opener::init())
+        .plugin(tauri_plugin_dialog::init())
         .invoke_handler(tauri::generate_handler![
             commands::collection::create_collection,
             commands::collection::get_collections,

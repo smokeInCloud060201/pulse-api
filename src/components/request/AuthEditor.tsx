@@ -1,5 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { KeyValuePair } from '../../types/request';
+import { Dropdown } from '../ui/Dropdown';
 
 interface AuthEditorProps {
   headers: KeyValuePair[];
@@ -83,22 +84,31 @@ export const AuthEditor: React.FC<AuthEditorProps> = ({ headers, onChange }) => 
     <div style={{ padding: '16px' }}>
       <div style={{ marginBottom: '16px', display: 'flex', alignItems: 'center', gap: '8px' }}>
         <label style={{ fontSize: '13px', fontWeight: 500 }}>Auth Type:</label>
-        <select
+        <Dropdown
           value={authType}
-          onChange={handleTypeChange}
-          style={{
-            padding: '6px 8px',
-            borderRadius: '4px',
-            border: '1px solid hsl(var(--border-light))',
-            background: 'hsl(var(--bg-panel))',
-            color: 'hsl(var(--text-main))',
-            fontSize: '13px'
+          onChange={(val) => {
+            const type = val as AuthType;
+            setAuthType(type);
+            if (type === 'none') {
+              updateAuthHeader('none', null);
+            } else if (type === 'bearer') {
+              updateAuthHeader('bearer', `Bearer ${bearerToken}`);
+            } else if (type === 'basic') {
+              const b64 = btoa(`${basicUsername}:${basicPassword}`);
+              updateAuthHeader('basic', `Basic ${b64}`);
+            }
           }}
-        >
-          <option value="none">No Auth</option>
-          <option value="bearer">Bearer Token</option>
-          <option value="basic">Basic Auth</option>
-        </select>
+          options={[
+            { value: 'none', label: 'No Auth' },
+            { value: 'bearer', label: 'Bearer Token' },
+            { value: 'basic', label: 'Basic Auth' }
+          ]}
+          triggerStyle={{
+            padding: '6px 8px',
+            background: 'hsl(var(--bg-panel))',
+            minWidth: '130px'
+          }}
+        />
       </div>
 
       {authType === 'bearer' && (

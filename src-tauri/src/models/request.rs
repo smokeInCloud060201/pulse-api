@@ -28,4 +28,5 @@ pub struct KeyValuePair {
     pub key: String,
     pub value: String,
     pub enabled: bool,
+    pub value_type: Option<String>,
 }

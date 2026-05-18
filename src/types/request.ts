@@ -2,6 +2,7 @@ export interface KeyValuePair {
   key: string;
   value: string;
   enabled: boolean;
+  value_type?: 'text' | 'file';
 }
 
 export interface ApiRequest {

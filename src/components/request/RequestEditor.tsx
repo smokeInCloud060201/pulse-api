@@ -14,6 +14,8 @@ import { WebSocketBody, WebSocketResponse, WsMessage } from './WebSocketEditor';
 import { AuthEditor } from './AuthEditor';
 import { EnvSelector } from '../layout/EnvSelector';
 import Editor from '@monaco-editor/react';
+import { open } from "@tauri-apps/plugin-dialog";
+import { Dropdown } from '../ui/Dropdown';
 import './RequestEditor.css';
 
 interface RequestEditorProps {
@@ -334,7 +336,7 @@ export const RequestEditor: React.FC<RequestEditorProps> = ({ requestId }) => {
               />
             )}
             {activeTab === 'body' && (
-              <div style={{ height: '100%', paddingTop: 16, display: 'flex', flexDirection: 'column' }}>
+              <div style={{ height: '100%', paddingTop: 8, display: 'flex', flexDirection: 'column' }}>
                 {request.protocol === 'WebSocket' ? (
                   <WebSocketBody onSend={handleWsSend} status={wsStatus} />
                 ) : request.protocol === 'GraphQL' ? (
@@ -342,18 +344,83 @@ export const RequestEditor: React.FC<RequestEditorProps> = ({ requestId }) => {
                 ) : request.protocol === 'gRPC' ? (
                   <GrpcEditor request={request} onChange={handleRequestChange} />
                 ) : (
-                  <Editor
-                    height="100%"
-                    defaultLanguage="json"
-                    theme="vs-dark"
-                    value={request.body_content || ''}
-                    onChange={handleBodyChange}
-                    options={{
-                      minimap: { enabled: false },
-                      fontSize: 13,
-                      scrollBeyondLastLine: false
-                    }}
-                  />
+                  <div style={{ display: 'flex', flexDirection: 'column', height: '100%' }}>
+                    <div style={{ display: 'flex', gap: 16, paddingBottom: 12, borderBottom: '1px solid var(--border-light)', marginBottom: 8, alignItems: 'center', fontSize: '0.85rem' }}>
+                      {['none', 'form-data', 'x-www-form-urlencoded', 'raw', 'binary', 'graphQL'].map(t => {
+                        const mainBodyType = ['none', 'form-data', 'x-www-form-urlencoded', 'binary', 'graphQL'].includes(request.body_type || 'none') ? (request.body_type || 'none') : 'raw';
+                        const isChecked = mainBodyType === t;
+                        return (
+                          <label key={t} style={{ display: 'flex', alignItems: 'center', gap: 4, cursor: 'pointer', color: isChecked ? 'hsl(var(--text-main))' : 'hsl(var(--text-muted))' }}>
+                            <input 
+                              type="radio" 
+                              checked={isChecked} 
+                              onChange={() => handleRequestChange({ ...request, body_type: t === 'raw' ? 'json' : t })}
+                              style={{ accentColor: 'hsl(var(--primary))' }}
+                            />
+                            {t}
+                          </label>
+                        );
+                      })}
+                      {['none', 'form-data', 'x-www-form-urlencoded', 'binary', 'graphQL'].includes(request.body_type || 'none') ? null : (
+                        <Dropdown
+                          value={request.body_type || 'json'}
+                          onChange={(value) => handleRequestChange({ ...request, body_type: value })}
+                          options={[
+                            { value: 'text', label: 'Text' },
+                            { value: 'javascript', label: 'JavaScript' },
+                            { value: 'json', label: 'JSON' },
+                            { value: 'html', label: 'HTML' },
+                            { value: 'xml', label: 'XML' },
+                          ]}
+                          style={{ marginLeft: 8, width: '110px' }}
+                          triggerStyle={{ border: 'none', background: 'transparent', color: 'hsl(var(--primary))', fontWeight: 500, padding: '0 8px' }}
+                        />
+                      )}
+                    </div>
+                    <div style={{ flex: 1, overflow: 'hidden' }}>
+                      {request.body_type === 'form-data' || request.body_type === 'x-www-form-urlencoded' ? (
+                        <KeyValueEditor
+                          items={safeParseKV(request.body_content || '[]')}
+                          onChange={items => handleBodyChange(JSON.stringify(items))}
+                          allowFileTypes={request.body_type === 'form-data'}
+                        />
+                      ) : request.body_type === 'binary' ? (
+                        <div style={{ display: 'flex', alignItems: 'center', gap: 8, padding: 16 }}>
+                          <button className="text-btn" onClick={async () => {
+                            try {
+                              const selected = await open({ multiple: false });
+                              if (selected && typeof selected === 'string') handleBodyChange(selected);
+                            } catch(e) {}
+                          }} style={{ padding: '4px 8px', border: '1px solid var(--border-light)', borderRadius: 4 }}>
+                            Select File
+                          </button>
+                          <span style={{ fontSize: '0.85rem', color: 'hsl(var(--text-muted))' }}>
+                            {request.body_content || 'No file selected'}
+                          </span>
+                        </div>
+                      ) : request.body_type === 'graphQL' ? (
+                        <GraphQLEditor request={request} onChange={handleBodyChange} />
+                      ) : request.body_type === 'none' || !request.body_type ? (
+                        <div style={{ color: 'hsl(var(--text-muted))', fontSize: '0.85rem', textAlign: 'center', marginTop: 32 }}>
+                          This request does not have a body
+                        </div>
+                      ) : (
+                        <Editor
+                          height="100%"
+                          defaultLanguage={request.body_type || 'json'}
+                          language={request.body_type || 'json'}
+                          theme="vs-dark"
+                          value={request.body_content || ''}
+                          onChange={handleBodyChange}
+                          options={{
+                            minimap: { enabled: false },
+                            fontSize: 13,
+                            scrollBeyondLastLine: false
+                          }}
+                        />
+                      )}
+                    </div>
+                  </div>
                 )}
               </div>
             )}

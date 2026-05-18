@@ -52,6 +52,7 @@ pub async fn send_rest_request(req: &ApiRequest) -> Result<ApiResponse, String> 
         header_map.insert(reqwest::header::CONTENT_TYPE, reqwest::header::HeaderValue::from_static("application/json"));
     }
 
+    let has_content_type = header_map.contains_key(reqwest::header::CONTENT_TYPE);
     let mut builder = client.request(method, &final_url).headers(header_map);
 
     // Parse body if present
@@ -74,12 +75,93 @@ pub async fn send_rest_request(req: &ApiRequest) -> Result<ApiResponse, String> 
         if let Some(body_content) = &req.body_content {
             if !body_content.is_empty() {
                 match body_type.as_str() {
-                    "json" => {
-                        // Just send raw string, header should be set by user or we could auto-set it
-                        builder = builder.body(body_content.clone());
+                    "form-data" => {
+                        if let Ok(pairs) = serde_json::from_str::<Vec<KeyValuePair>>(body_content) {
+                            let mut form = reqwest::multipart::Form::new();
+                            for pair in pairs {
+                                if pair.enabled && !pair.key.is_empty() {
+                                    if pair.value_type.as_deref() == Some("file") {
+                                        if let Ok(bytes) = std::fs::read(&pair.value) {
+                                            let file_name = std::path::Path::new(&pair.value).file_name().unwrap_or_default().to_string_lossy().to_string();
+                                            let part = reqwest::multipart::Part::bytes(bytes).file_name(file_name);
+                                            form = form.part(pair.key, part);
+                                        }
+                                    } else {
+                                        form = form.text(pair.key, pair.value);
+                                    }
+                                }
+                            }
+                            builder = builder.multipart(form);
+                        }
                     },
-                    "raw" => {
+                    "x-www-form-urlencoded" => {
+                        if let Ok(pairs) = serde_json::from_str::<Vec<KeyValuePair>>(body_content) {
+                            let mut form_params = String::new();
+                            for pair in pairs {
+                                if pair.enabled && !pair.key.is_empty() {
+                                    if !form_params.is_empty() {
+                                        form_params.push('&');
+                                    }
+                                    form_params.push_str(&urlencoding::encode(&pair.key));
+                                    form_params.push('=');
+                                    form_params.push_str(&urlencoding::encode(&pair.value));
+                                }
+                            }
+                            builder = builder.body(form_params);
+                            if !has_content_type {
+                                builder = builder.header(reqwest::header::CONTENT_TYPE, "application/x-www-form-urlencoded");
+                            }
+                        }
+                    },
+                    "binary" => {
+                        if let Ok(bytes) = std::fs::read(body_content) {
+                            builder = builder.body(bytes);
+                        }
+                    },
+                    "graphQL" => {
+                        if let Ok(mut json) = serde_json::from_str::<serde_json::Value>(body_content) {
+                            if let Some(vars) = json.get("variables").and_then(|v| v.as_str()) {
+                                if let Ok(vars_json) = serde_json::from_str::<serde_json::Value>(vars) {
+                                    json["variables"] = vars_json;
+                                }
+                            }
+                            builder = builder.body(json.to_string());
+                        } else {
+                            builder = builder.body(body_content.clone());
+                        }
+                        if !has_content_type {
+                            builder = builder.header(reqwest::header::CONTENT_TYPE, "application/json");
+                        }
+                    },
+                    "json" => {
                         builder = builder.body(body_content.clone());
+                        if !has_content_type {
+                            builder = builder.header(reqwest::header::CONTENT_TYPE, "application/json");
+                        }
+                    },
+                    "text" => {
+                        builder = builder.body(body_content.clone());
+                        if !has_content_type {
+                            builder = builder.header(reqwest::header::CONTENT_TYPE, "text/plain");
+                        }
+                    },
+                    "html" => {
+                        builder = builder.body(body_content.clone());
+                        if !has_content_type {
+                            builder = builder.header(reqwest::header::CONTENT_TYPE, "text/html");
+                        }
+                    },
+                    "xml" => {
+                        builder = builder.body(body_content.clone());
+                        if !has_content_type {
+                            builder = builder.header(reqwest::header::CONTENT_TYPE, "application/xml");
+                        }
+                    },
+                    "javascript" => {
+                        builder = builder.body(body_content.clone());
+                        if !has_content_type {
+                            builder = builder.header(reqwest::header::CONTENT_TYPE, "application/javascript");
+                        }
                     },
                     _ => {
                         builder = builder.body(body_content.clone());

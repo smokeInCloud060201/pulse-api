@@ -1,5 +1,6 @@
 import React, { useEffect, useState } from 'react';
 import { useEnvironmentStore } from '../../stores/environmentStore';
+import { Dropdown } from '../ui/Dropdown';
 
 export const EnvSelector: React.FC = () => {
   const { environments, activeEnvironmentId, setActiveEnvironment, fetchEnvironments } = useEnvironmentStore();
@@ -11,27 +12,18 @@ export const EnvSelector: React.FC = () => {
 
   return (
     <div style={{ display: 'flex', alignItems: 'center', gap: '8px', padding: '0 16px' }}>
-      <select
+      <Dropdown
         value={activeEnvironmentId || ''}
-        onChange={e => setActiveEnvironment(e.target.value || null)}
-        style={{
+        onChange={val => setActiveEnvironment(val || null)}
+        options={[
+          { value: '', label: 'No Environment' },
+          ...environments.map(env => ({ value: env.id, label: env.name }))
+        ]}
+        triggerStyle={{
           background: 'var(--bg-secondary)',
-          color: 'var(--text-primary)',
-          border: '1px solid var(--border-color)',
-          padding: '6px 12px',
-          borderRadius: '4px',
-          fontSize: '13px',
-          outline: 'none',
           minWidth: '150px'
         }}
-      >
-        <option value="">No Environment</option>
-        {environments.map(env => (
-          <option key={env.id} value={env.id}>
-            {env.name}
-          </option>
-        ))}
-      </select>
+      />
       <button
         onClick={() => setShowEditor(true)}
         style={{

@@ -1,4 +1,4 @@
-import React from 'react';
+import React, { useState, useRef, useEffect } from 'react';
 import { Columns, Rows, ChevronDown } from 'lucide-react';
 import { ApiRequest } from '../../types/request';
 import './RequestEditor.css';
@@ -28,25 +28,50 @@ export const RequestConfig: React.FC<RequestConfigProps> = ({
   layoutMode,
   onToggleLayout
 }) => {
+  const [isMethodDropdownOpen, setIsMethodDropdownOpen] = useState(false);
+  const methodDropdownRef = useRef<HTMLDivElement>(null);
+
+  useEffect(() => {
+    const handleClickOutside = (event: MouseEvent) => {
+      if (methodDropdownRef.current && !methodDropdownRef.current.contains(event.target as Node)) {
+        setIsMethodDropdownOpen(false);
+      }
+    };
+    document.addEventListener('mousedown', handleClickOutside);
+    return () => document.removeEventListener('mousedown', handleClickOutside);
+  }, []);
+
   return (
     <div className="request-config">
       <div className="url-bar-group">
 
-        <div className="method-select-wrapper" style={{ position: 'relative', display: 'flex', alignItems: 'center' }}>
-          <select
+        <div className="method-select-wrapper" ref={methodDropdownRef} style={{ position: 'relative', display: 'flex', alignItems: 'center' }}>
+          <button
             className={`method-select method-${request.method.toLowerCase()}`}
-            value={request.protocol === 'WebSocket' ? 'WS' : request.method}
-            onChange={e => onChange({ ...request, method: e.target.value })}
+            onClick={() => setIsMethodDropdownOpen(!isMethodDropdownOpen)}
             disabled={request.protocol === 'GraphQL' || request.protocol === 'gRPC' || request.protocol === 'WebSocket'}
-            style={{ paddingRight: '24px' }}
+            style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '4px' }}
           >
-            {METHODS.map(m => (
-              <option key={m} value={m}>
-                {m}
-              </option>
-            ))}
-          </select>
-          <ChevronDown size={14} style={{ position: 'absolute', right: '8px', pointerEvents: 'none', color: 'hsl(var(--text-muted))' }} />
+            {request.protocol === 'WebSocket' ? 'WS' : request.method}
+            <ChevronDown size={14} style={{ color: 'hsl(var(--text-muted))' }} />
+          </button>
+
+          {isMethodDropdownOpen && (
+            <div className="method-dropdown-menu">
+              {METHODS.map(m => (
+                <div
+                  key={m}
+                  className={`method-dropdown-item method-${m.toLowerCase()}`}
+                  onClick={() => {
+                    onChange({ ...request, method: m });
+                    setIsMethodDropdownOpen(false);
+                  }}
+                >
+                  {m}
+                </div>
+              ))}
+            </div>
+          )}
         </div>
 
         <div className="vertical-divider" />
