@@ -6,7 +6,7 @@
 .custom-dropdown-trigger {
   display: flex;
   align-items: center;
-  justify-content: space-between;
+  justify-content: start;
   gap: 8px;
   background: transparent;
   border: 1px solid hsl(var(--border-light));

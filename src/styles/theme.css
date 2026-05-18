@@ -23,6 +23,11 @@
   --method-delete: 3 85% 50%;
   --method-patch: 0 0% 65%;
 
+  /* Status Colors */
+  --color-success: 144 88% 39%;
+  --color-warning: 42 100% 50%;
+  --color-danger: 3 85% 50%;
+
   --font-sans: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif;
   --font-mono: ui-monospace, SFMono-Regular, Consolas, 'Liberation Mono', Menlo, monospace;
 }
@@ -103,3 +108,66 @@ body {
   margin-top: 8px;
   overflow: hidden;
 }
+
+/* Shared Resizer Styles */
+.app-resizer {
+  position: relative;
+  z-index: 10;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  transition: background-color 0.2s ease;
+}
+
+.app-resizer::after {
+  content: '';
+  position: absolute;
+  background-color: transparent;
+  transition: background-color 0.2s ease;
+}
+
+.app-resizer:hover::after,
+.app-resizer.is-dragging::after {
+  background-color: hsl(var(--primary));
+}
+
+.app-resizer-vertical {
+  width: 4px;
+  cursor: col-resize;
+  background-color: transparent;
+}
+
+.app-resizer-vertical::after {
+  width: 2px;
+  height: 100%;
+}
+
+.app-resizer-horizontal {
+  height: 4px;
+  cursor: row-resize;
+  background-color: transparent;
+}
+
+.app-resizer-horizontal::after {
+  height: 2px;
+  width: 100%;
+}
+
+.resizer-handle {
+  width: 32px;
+  height: 4px;
+  background: hsl(var(--border-light));
+  border-radius: 4px;
+  transition: background 0.2s;
+}
+
+.app-resizer-vertical .resizer-handle {
+  width: 4px;
+  height: 32px;
+}
+
+.app-resizer:hover .resizer-handle,
+.app-resizer.is-dragging .resizer-handle {
+  background: hsl(var(--primary));
+}
+

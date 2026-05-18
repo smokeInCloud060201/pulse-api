@@ -1,5 +1,6 @@
 import React, { useState, useCallback } from 'react';
 import { useTabStore } from '../../stores/tabStore';
+import { Globe, Database, Zap, Activity } from 'lucide-react';
 import { useRequestStore } from '../../stores/requestStore';
 import { useEnvironmentStore } from '../../stores/environmentStore';
 import { requestService } from '../../services/requestService';
@@ -12,10 +13,12 @@ import { GraphQLEditor } from './GraphQLEditor';
 import { GrpcEditor } from './GrpcEditor';
 import { WebSocketBody, WebSocketResponse, WsMessage } from './WebSocketEditor';
 import { AuthEditor } from './AuthEditor';
-import { EnvSelector } from '../layout/EnvSelector';
+
+import { useResizer } from '../../utils/useResizer';
 import Editor from '@monaco-editor/react';
 import { open } from "@tauri-apps/plugin-dialog";
 import { Dropdown } from '../ui/Dropdown';
+import { SaveRequestModal } from './SaveRequestModal';
 import './RequestEditor.css';
 
 interface RequestEditorProps {
@@ -23,7 +26,8 @@ interface RequestEditorProps {
 }
 
 export const RequestEditor: React.FC<RequestEditorProps> = ({ requestId }) => {
-  const { tabs, updateTabRequest } = useTabStore();
+  const [showSaveModal, setShowSaveModal] = useState(false);
+  const { tabs, updateTabRequest, markTabSaved, updateTabId } = useTabStore();
   const { updateRequest } = useRequestStore();
   const { activeEnvironmentId } = useEnvironmentStore();
 
@@ -37,8 +41,34 @@ export const RequestEditor: React.FC<RequestEditorProps> = ({ requestId }) => {
   const [wsStatus, setWsStatus] = useState<'disconnected' | 'connecting' | 'connected'>('disconnected');
   const [wsConnectionId, setWsConnectionId] = useState<string | null>(null);
   const [wsMessages, setWsMessages] = useState<WsMessage[]>([]);
+  const [activeResponseTab, setActiveResponseTab] = useState<'body' | 'headers'>('body');
   const [layoutMode, setLayoutMode] = useState<'stacked' | 'side-by-side'>(() => {
     return (localStorage.getItem('pulse_layout') as 'stacked' | 'side-by-side') || 'stacked';
+  });
+
+  const { size: topPaneHeight, isDragging: isVerticalDragging, handleMouseDown: handleVerticalMouseDown } = useResizer({
+    initialSize: 350,
+    direction: 'vertical',
+    minSize: 150,
+    maxSize: 800,
+    storageKey: 'pulse_top_pane_height'
+  });
+
+  const { size: leftPaneWidth, isDragging: isHorizontalDragging, handleMouseDown: handleHorizontalMouseDown } = useResizer({
+    initialSize: 450,
+    direction: 'horizontal',
+    minSize: 300,
+    maxSize: 1200,
+    storageKey: 'pulse_left_pane_width'
+  });
+
+  const { size: consolePaneHeight, isDragging: isConsoleDragging, handleMouseDown: handleConsoleMouseDown } = useResizer({
+    initialSize: 150,
+    direction: 'vertical',
+    minSize: 50,
+    maxSize: 600,
+    storageKey: 'pulse_console_pane_height',
+    reverse: true
   });
 
   const toggleLayout = () => {
@@ -62,9 +92,44 @@ export const RequestEditor: React.FC<RequestEditorProps> = ({ requestId }) => {
 
   const saveRequest = useCallback(async () => {
     if (!request) return;
-    await updateRequest(request);
-    updateTabRequest({ ...request });
-  }, [request, updateRequest, updateTabRequest]);
+
+    if (!request.collection_id) {
+      setShowSaveModal(true);
+      return;
+    }
+
+    try {
+      await updateRequest(request);
+      markTabSaved(request.id);
+    } catch (e) {
+      console.error('Failed to save request:', e);
+    }
+  }, [request, updateRequest, markTabSaved]);
+
+  const handleSaveModalConfirm = async (collectionId: string, folderId: string | null, name: string) => {
+    if (!request) return;
+
+    try {
+      // Create request in backend to get a valid UUID from the db
+      const newBackendReq = await requestService.createRequest(collectionId, folderId, name);
+
+      const updatedRequest = {
+        ...request,
+        id: newBackendReq.id,
+        collection_id: collectionId,
+        folder_id: folderId,
+        name
+      };
+
+      await updateRequest(updatedRequest);
+      
+      updateTabId(request.id, newBackendReq.id, updatedRequest);
+      markTabSaved(newBackendReq.id);
+      setShowSaveModal(false);
+    } catch (e) {
+      console.error('Failed to create request', e);
+    }
+  };
 
   const handleSend = useCallback(async () => {
     if (!request) return;
@@ -230,71 +295,79 @@ export const RequestEditor: React.FC<RequestEditorProps> = ({ requestId }) => {
     }
   };
 
+  const getFormattedBody = () => {
+    if (!response) return '';
+    if (response.body_type === 'json' || response.body.trim().startsWith('{') || response.body.trim().startsWith('[')) {
+      try {
+        const parsed = JSON.parse(response.body);
+        return JSON.stringify(parsed, null, 2);
+      } catch {
+        return response.body;
+      }
+    }
+    return response.body;
+  };
+
   return (
     <div style={{ display: 'flex', flexDirection: 'column', height: '100%', backgroundColor: 'hsl(var(--bg-panel))' }}>
-      {/* Top Bar: Protocol, Name Input, Save, Env */}
+      {/* Top Bar: Protocol, Name Input, Save */}
       <div
-        style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', padding: '12px 16px 0 16px', gap: '12px' }}
+        style={{ display: 'flex', alignItems: 'center', padding: '12px 16px 0 16px', gap: '8px' }}
       >
-        <div style={{ display: 'flex', alignItems: 'center', gap: '12px', flex: 1 }}>
-          <Dropdown
-            value={request.protocol || 'HTTP'}
-            onChange={(val) => handleRequestChange({ ...request, protocol: val })}
-            options={[
-              { value: 'HTTP', label: 'HTTP' },
-              { value: 'GraphQL', label: 'GraphQL' },
-              { value: 'WebSocket', label: 'WebSocket' },
-              { value: 'gRPC', label: 'gRPC' }
-            ]}
-            style={{ width: '120px' }}
-            triggerStyle={{ border: '1px solid hsl(var(--border-light))', borderRadius: '4px', padding: '4px 8px', width: '100%', display: 'flex', justifyContent: 'space-between' }}
-          />
-          <input
-            type="text"
-            value={request.name || ''}
-            onChange={(e) => handleRequestChange({ ...request, name: e.target.value })}
-            placeholder="Untitled Request"
-            style={{
-              background: 'transparent',
-              border: '1px solid transparent',
-              color: 'hsl(var(--text-main))',
-              fontSize: '0.95rem',
-              fontWeight: 600,
-              padding: '4px 8px',
-              borderRadius: '4px',
-              outline: 'none',
-              flex: 1,
-              maxWidth: '300px',
-              transition: 'border 0.2s'
-            }}
-            onFocus={(e) => e.target.style.border = '1px solid hsl(var(--border-light))'}
-            onBlur={(e) => e.target.style.border = '1px solid transparent'}
-          />
-          <button
-            onClick={saveRequest}
-            style={{
-              display: 'flex',
-              alignItems: 'center',
-              gap: 4,
-              background: 'hsl(var(--bg-surface))',
-              border: '1px solid hsl(var(--border-light))',
-              padding: '4px 16px',
-              borderRadius: 4,
-              fontSize: '0.85rem',
-              fontWeight: 500,
-              cursor: 'pointer',
-              color: 'hsl(var(--text-main))',
-              transition: 'background 0.2s'
-            }}
-            onMouseOver={(e) => e.currentTarget.style.background = 'hsl(var(--bg-hover))'}
-            onMouseOut={(e) => e.currentTarget.style.background = 'hsl(var(--bg-surface))'}
-          >
-            Save
-          </button>
-        </div>
-        <div style={{ display: 'flex', gap: 12, alignItems: 'center' }}>
-          <EnvSelector />
-        </div>
+        <Dropdown
+          value={request.protocol || 'HTTP'}
+          onChange={(val) => handleRequestChange({ ...request, protocol: val })}
+          hideChevron={true}
+          options={[
+            { value: 'HTTP', label: <div style={{ display: 'flex', alignItems: 'center', gap: 6 }}><Globe size={14} /> <span style={{fontWeight: 600}}>HTTP</span></div> },
+            { value: 'GraphQL', label: <div style={{ display: 'flex', alignItems: 'center', gap: 6 }}><Database size={14} /> <span style={{fontWeight: 600}}>GraphQL</span></div> },
+            { value: 'WebSocket', label: <div style={{ display: 'flex', alignItems: 'center', gap: 6 }}><Zap size={14} /> <span style={{fontWeight: 600}}>WebSocket</span></div> },
+            { value: 'gRPC', label: <div style={{ display: 'flex', alignItems: 'center', gap: 6 }}><Activity size={14} /> <span style={{fontWeight: 600}}>gRPC</span></div> }
+          ]}
+          style={{ width: 'auto' }}
+          triggerStyle={{ border: 'none', background: 'transparent', padding: '6px 8px', display: 'flex', color: 'hsl(var(--text-muted))' }}
+        />
+        <input
+          type="text"
+          value={request.name || ''}
+          onChange={(e) => handleRequestChange({ ...request, name: e.target.value })}
+          placeholder="Untitled Request"
+          style={{
+            background: 'transparent',
+            border: '1px solid transparent',
+            color: 'hsl(var(--text-main))',
+            fontSize: '1.05rem',
+            fontWeight: 600,
+            padding: '4px 8px',
+            borderRadius: '4px',
+            outline: 'none',
+            flex: 1,
+            transition: 'border 0.2s'
+          }}
+          onFocus={(e) => e.target.style.border = '1px solid hsl(var(--border-light))'}
+          onBlur={(e) => e.target.style.border = '1px solid transparent'}
+        />
+        <button
+          onClick={saveRequest}
+          style={{
+            display: 'flex',
+            alignItems: 'center',
+            gap: 4,
+            background: 'hsl(var(--bg-surface))',
+            border: '1px solid hsl(var(--border-light))',
+            padding: '6px 16px',
+            borderRadius: 6,
+            fontSize: '0.85rem',
+            fontWeight: 500,
+            cursor: 'pointer',
+            color: 'hsl(var(--text-main))',
+            transition: 'background 0.2s'
+          }}
+          onMouseOver={(e) => e.currentTarget.style.background = 'hsl(var(--bg-hover))'}
+          onMouseOut={(e) => e.currentTarget.style.background = 'hsl(var(--bg-surface))'}
+        >
+          Save
+        </button>
       </div>
 
       <RequestConfig
@@ -314,45 +387,51 @@ export const RequestEditor: React.FC<RequestEditorProps> = ({ requestId }) => {
           display: 'flex',
           flexDirection: layoutMode === 'stacked' ? 'column' : 'row',
           flex: 1,
-          overflow: 'hidden'
+          overflow: 'hidden',
+          gap: '12px'
         }}
       >
         {/* Top/Left pane: Request Details */}
         <div
           style={{
-            flex: 1,
+            height: layoutMode === 'stacked' ? topPaneHeight : '100%',
+            width: layoutMode === 'side-by-side' ? leftPaneWidth : '100%',
+            flexShrink: 0,
             display: 'flex',
             flexDirection: 'column',
-            borderRight: layoutMode === 'side-by-side' ? '1px solid var(--border-light)' : 'none',
-            borderBottom: layoutMode === 'stacked' ? '1px solid var(--border-light)' : 'none',
-            overflow: 'hidden'
+            overflow: 'hidden',
+            border: '1px solid var(--border-light)',
+            borderRadius: '8px',
+            background: 'var(--bg-secondary)'
           }}
         >
-          <div className="request-editor-tabs">
-            <div className={`req-tab ${activeTab === 'params' ? 'active' : ''}`} onClick={() => setActiveTab('params')}>
-              Params
-            </div>
-            <div className={`req-tab ${activeTab === 'auth' ? 'active' : ''}`} onClick={() => setActiveTab('auth')}>
-              Auth
-            </div>
-            <div
-              className={`req-tab ${activeTab === 'headers' ? 'active' : ''}`}
-              onClick={() => setActiveTab('headers')}
-            >
-              Headers
-            </div>
-            <div className={`req-tab ${activeTab === 'body' ? 'active' : ''}`} onClick={() => setActiveTab('body')}>
-              Body
-            </div>
-            <div className={`req-tab ${activeTab === 'prereq' ? 'active' : ''}`} onClick={() => setActiveTab('prereq')}>
-              Pre-request Script
-            </div>
-            <div className={`req-tab ${activeTab === 'tests' ? 'active' : ''}`} onClick={() => setActiveTab('tests')}>
-              Tests
+          <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', borderBottom: '1px solid hsl(var(--border-light))', background: 'hsl(var(--bg-panel))', paddingRight: '8px' }}>
+            <div className="request-editor-tabs" style={{ borderBottom: 'none', flex: 1 }}>
+              <div className={`req-tab ${activeTab === 'params' ? 'active' : ''}`} onClick={() => setActiveTab('params')}>
+                Params
+              </div>
+              <div className={`req-tab ${activeTab === 'auth' ? 'active' : ''}`} onClick={() => setActiveTab('auth')}>
+                Auth
+              </div>
+              <div
+                className={`req-tab ${activeTab === 'headers' ? 'active' : ''}`}
+                onClick={() => setActiveTab('headers')}
+              >
+                Headers
+              </div>
+              <div className={`req-tab ${activeTab === 'body' ? 'active' : ''}`} onClick={() => setActiveTab('body')}>
+                Body
+              </div>
+              <div className={`req-tab ${activeTab === 'prereq' ? 'active' : ''}`} onClick={() => setActiveTab('prereq')}>
+                Pre-request Script
+              </div>
+              <div className={`req-tab ${activeTab === 'tests' ? 'active' : ''}`} onClick={() => setActiveTab('tests')}>
+                Tests
+              </div>
             </div>
           </div>
 
-          <div style={{ flex: 1, overflow: 'auto', padding: '0 16px' }}>
+          <div style={{ flex: 1, overflow: 'auto', padding: '0 16px', minHeight: 0 }}>
             {activeTab === 'params' && (
               <KeyValueEditor
                 items={safeParseKV(request.query_params)}
@@ -495,6 +574,20 @@ export const RequestEditor: React.FC<RequestEditorProps> = ({ requestId }) => {
           </div>
         </div>
 
+        {/* Resizer */}
+        <div
+          className={`app-resizer ${layoutMode === 'stacked' ? 'app-resizer-horizontal' : 'app-resizer-vertical'} ${(layoutMode === 'stacked' ? isVerticalDragging : isHorizontalDragging) ? 'is-dragging' : ''
+            }`}
+          onMouseDown={layoutMode === 'stacked' ? handleVerticalMouseDown : handleHorizontalMouseDown}
+          style={{
+            margin: layoutMode === 'stacked' ? '-6px 0' : '0 -6px',
+            padding: layoutMode === 'stacked' ? '6px 0' : '0 6px',
+            zIndex: 20
+          }}
+        >
+          <div className="resizer-handle" />
+        </div>
+
         {/* Bottom/Right pane: Response */}
         <div
           style={{
@@ -502,7 +595,6 @@ export const RequestEditor: React.FC<RequestEditorProps> = ({ requestId }) => {
             display: 'flex',
             flexDirection: 'column',
             background: 'var(--bg-secondary)',
-            margin: '12px',
             border: '1px solid var(--border-light)',
             borderRadius: '8px',
             overflow: 'hidden'
@@ -512,103 +604,147 @@ export const RequestEditor: React.FC<RequestEditorProps> = ({ requestId }) => {
             <WebSocketResponse messages={wsMessages} />
           ) : (
             <>
-              <div className="request-editor-tabs" style={{ background: 'var(--bg-panel)' }}>
-                <div className="req-tab active" style={{ cursor: 'default' }}>
-                  Response
+              <div className="request-editor-tabs" style={{ background: 'var(--bg-panel)', display: 'flex', justifyContent: 'space-between', alignItems: 'center', paddingRight: '16px' }}>
+                <div style={{ display: 'flex', gap: '16px' }}>
+                  <div 
+                    className={`req-tab ${activeResponseTab === 'body' ? 'active' : ''}`} 
+                    onClick={() => setActiveResponseTab('body')}
+                  >
+                    Body
+                  </div>
+                  <div 
+                    className={`req-tab ${activeResponseTab === 'headers' ? 'active' : ''}`} 
+                    onClick={() => setActiveResponseTab('headers')}
+                  >
+                    Headers
+                  </div>
                 </div>
+                
+                {/* Meta info on the right side if we have a response */}
+                {response && !isLoading && (
+                  <div style={{ display: 'flex', gap: '16px', fontSize: '0.85rem', alignItems: 'center' }}>
+                    <span style={{ color: response.status < 300 ? 'hsl(var(--color-success))' : 'hsl(var(--color-danger))', fontWeight: 600 }}>
+                      Status: <span style={{ fontWeight: 400 }}>{response.status} {response.status_text}</span>
+                    </span>
+                    <span style={{ color: 'hsl(var(--text-muted))', fontWeight: 600 }}>
+                      Time: <span style={{ color: 'hsl(var(--text-main))', fontWeight: 400 }}>{response.latency_ms} ms</span>
+                    </span>
+                    <span style={{ color: 'hsl(var(--text-muted))', fontWeight: 600 }}>
+                      Size: <span style={{ color: 'hsl(var(--text-main))', fontWeight: 400 }}>{response.size_bytes} B</span>
+                    </span>
+                  </div>
+                )}
               </div>
-              <div style={{ flex: 1, overflow: 'hidden' }}>
+              <div style={{ flex: 1, overflow: 'hidden', minHeight: 0 }}>
                 {isLoading ? (
                   <div style={{ padding: '16px', color: 'var(--text-muted)' }}>Sending request...</div>
                 ) : response ? (
                   <div style={{ display: 'flex', flexDirection: 'column', height: '100%' }}>
-                    <div
-                      style={{
-                        padding: '12px 16px',
-                        display: 'flex',
-                        gap: '16px',
-                        borderBottom: '1px solid var(--border-light)',
-                        fontSize: '0.9rem',
-                        background: 'var(--bg-surface)'
-                      }}
-                    >
-                      <span
-                        style={{
-                          color: response.status < 300 ? 'var(--color-success)' : 'var(--color-danger)'
-                        }}
-                      >
-                        Status: {response.status} {response.status_text}
-                      </span>
-                      <span style={{ color: 'var(--text-muted)' }}>Time: {response.latency_ms}ms</span>
-                      <span style={{ color: 'var(--text-muted)' }}>Size: {response.size_bytes}B</span>
-                    </div>
-                    <div style={{ flex: 1 }}>
-                      <Editor
-                        height="100%"
-                        language={
-                          response.body_type === 'json' ? 'json' : response.body_type === 'html' ? 'html' : 'text'
-                        }
-                        theme="vs-dark"
-                        value={response.body}
-                        options={{
-                          readOnly: true,
-                          minimap: { enabled: false },
-                          fontSize: 13,
-                          wordWrap: 'on'
-                        }}
-                      />
+                    <div style={{ flex: 1, minHeight: 0 }}>
+                      {activeResponseTab === 'body' ? (
+                        <Editor
+                          height="100%"
+                          language={
+                            response.body_type === 'json' || getFormattedBody().trim().startsWith('{') || getFormattedBody().trim().startsWith('[') ? 'json' : response.body_type === 'html' ? 'html' : 'text'
+                          }
+                          theme="vs-dark"
+                          value={getFormattedBody()}
+                          options={{
+                            readOnly: true,
+                            minimap: { enabled: false },
+                            fontSize: 13,
+                            wordWrap: 'on'
+                          }}
+                        />
+                      ) : (
+                        <div className="response-headers-container">
+                          <table className="headers-table">
+                            <thead>
+                              <tr>
+                                <th>Key</th>
+                                <th>Value</th>
+                              </tr>
+                            </thead>
+                            <tbody>
+                              {response.headers.map((h, i) => (
+                                <tr key={i}>
+                                  <td className="header-key">{h[0]}</td>
+                                  <td className="header-value">{h[1]}</td>
+                                </tr>
+                              ))}
+                            </tbody>
+                          </table>
+                        </div>
+                      )}
                     </div>
                     {response.console_logs && response.console_logs.length > 0 && (
-                      <div
-                        style={{
-                          borderTop: '1px solid var(--border-light)',
-                          height: '150px',
-                          display: 'flex',
-                          flexDirection: 'column'
-                        }}
-                      >
+                      <>
+                        <div
+                          className={`app-resizer app-resizer-horizontal ${isConsoleDragging ? 'is-dragging' : ''}`}
+                          onMouseDown={handleConsoleMouseDown}
+                        />
                         <div
                           style={{
-                            padding: '8px 16px',
-                            background: 'var(--bg-primary)',
-                            fontSize: '0.8rem',
-                            fontWeight: 600
+                            height: consolePaneHeight,
+                            display: 'flex',
+                            flexDirection: 'column'
                           }}
                         >
-                          Console
+                          <div
+                            style={{
+                              padding: '8px 16px',
+                              background: 'var(--bg-primary)',
+                              fontSize: '0.8rem',
+                              fontWeight: 600
+                            }}
+                          >
+                            Console
+                          </div>
+                          <div
+                            style={{
+                              flex: 1,
+                              overflow: 'auto',
+                              padding: '8px 16px',
+                              fontFamily: 'monospace',
+                              fontSize: '0.85rem'
+                            }}
+                          >
+                            {response.console_logs.map((log, i) => (
+                              <div
+                                key={i}
+                                style={{
+                                  borderBottom: '1px solid rgba(255,255,255,0.05)',
+                                  padding: '4px 0'
+                                }}
+                              >
+                                {log}
+                              </div>
+                            ))}
+                          </div>
                         </div>
-                        <div
-                          style={{
-                            flex: 1,
-                            overflow: 'auto',
-                            padding: '8px 16px',
-                            fontFamily: 'monospace',
-                            fontSize: '0.85rem'
-                          }}
-                        >
-                          {response.console_logs.map((log, i) => (
-                            <div
-                              key={i}
-                              style={{
-                                borderBottom: '1px solid rgba(255,255,255,0.05)',
-                                padding: '4px 0'
-                              }}
-                            >
-                              {log}
-                            </div>
-                          ))}
-                        </div>
-                      </div>
+                      </>
                     )}
                   </div>
                 ) : (
-                  <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', textAlign: 'center', verticalAlign: 'center', padding: '16px', color: 'var(--text-muted)' }}>Hit Send to get a response</div>
+                  <div className="empty-response-state">
+                    <div className="empty-state-icon">🚀</div>
+                    <h3>Enter URL and hit Send</h3>
+                    <p>Get a response back to view details here.</p>
+                  </div>
                 )}
               </div>
             </>
           )}
         </div>
       </div>
+
+      {showSaveModal && request && (
+        <SaveRequestModal
+          request={request}
+          onSave={handleSaveModalConfirm}
+          onClose={() => setShowSaveModal(false)}
+        />
+      )}
     </div>
   );
 };

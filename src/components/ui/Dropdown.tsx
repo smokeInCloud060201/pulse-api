@@ -14,9 +14,10 @@ interface DropdownProps {
   style?: React.CSSProperties;
   className?: string;
   triggerStyle?: React.CSSProperties;
+  hideChevron?: boolean;
 }
 
-export const Dropdown: React.FC<DropdownProps> = ({ value, options, onChange, style, className, triggerStyle }) => {
+export const Dropdown: React.FC<DropdownProps> = ({ value, options, onChange, style, className, triggerStyle, hideChevron }) => {
   const [isOpen, setIsOpen] = useState(false);
   const dropdownRef = useRef<HTMLDivElement>(null);
 
@@ -41,7 +42,7 @@ export const Dropdown: React.FC<DropdownProps> = ({ value, options, onChange, st
         style={triggerStyle}
       >
         <span className="custom-dropdown-label">{selectedOption?.label}</span>
-        <ChevronDown size={14} style={{ color: 'hsl(var(--text-muted))', flexShrink: 0 }} />
+        {!hideChevron && <ChevronDown size={14} style={{ color: 'hsl(var(--text-muted))', flexShrink: 0 }} />}
       </button>
 
       {isOpen && (

@@ -74,8 +74,6 @@ export const RequestConfig: React.FC<RequestConfigProps> = ({
           )}
         </div>
 
-        <div className="vertical-divider" />
-
         <input
           type="text"
           className="url-input"

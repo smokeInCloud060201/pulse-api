@@ -1,5 +1,5 @@
-import React, { useEffect } from 'react';
-import { Folder as FolderIcon, ChevronRight, ChevronDown, Plus, Trash2, Download, Copy } from 'lucide-react';
+import React, { useEffect, useState } from 'react';
+import { Folder as FolderIcon, ChevronRight, ChevronDown, Plus, Trash2, Download, Copy, MoreHorizontal, Edit2, FileText } from 'lucide-react';
 import { useCollectionStore } from '../../stores/collectionStore';
 import { useRequestStore } from '../../stores/requestStore';
 import { useTabStore } from '../../stores/tabStore';
@@ -7,11 +7,21 @@ import { Folder } from '../../types/collection';
 import { ApiRequest } from '../../types/request';
 
 export const CollectionTree: React.FC<{ searchTerm?: string }> = ({ searchTerm = '' }) => {
-  const { collections, folders, loadCollections, addCollection, deleteCollection, addFolder, deleteFolder } =
+  const { collections, folders, loadCollections, addCollection, deleteCollection, updateCollection, addFolder, deleteFolder, updateFolder } =
     useCollectionStore();
   const { requests, loadRequests, createRequest, deleteRequest, duplicateRequest } = useRequestStore();
   const { openTab } = useTabStore();
-  const [expanded, setExpanded] = React.useState<Record<string, boolean>>({});
+  const [expanded, setExpanded] = useState<Record<string, boolean>>({});
+  const [activeMenu, setActiveMenu] = useState<string | null>(null);
+  const [menuPos, setMenuPos] = useState<{ top: number, left: number } | null>(null);
+  const [editingItem, setEditingItem] = useState<{ type: 'collection' | 'folder', id: string } | null>(null);
+  const [editingName, setEditingName] = useState('');
+
+  useEffect(() => {
+    const closeMenu = () => setActiveMenu(null);
+    document.addEventListener('click', closeMenu);
+    return () => document.removeEventListener('click', closeMenu);
+  }, []);
 
   useEffect(() => {
     loadCollections().then(() => {
@@ -57,21 +67,26 @@ export const CollectionTree: React.FC<{ searchTerm?: string }> = ({ searchTerm =
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [searchTerm, collections, requests, folders]);
 
-  const handleAddCollection = () => {
-    const name = prompt('New Collection Name:');
-    if (name) addCollection(name);
+  const handleAddCollection = async () => {
+    const col = await addCollection('New Collection');
+    if (col) setExpanded(prev => ({ ...prev, [col.id]: true }));
   };
 
-  const handleAddFolder = (collectionId: string, parentId: string | null = null, e: React.MouseEvent) => {
-    e.stopPropagation();
-    const name = prompt('New Folder Name:');
-    if (name) addFolder(collectionId, parentId, name);
+  const handleAddFolder = async (collectionId: string, parentId: string | null = null, e?: React.MouseEvent) => {
+    if (e) e.stopPropagation();
+    const folder = await addFolder(collectionId, parentId, 'New Folder');
+    if (folder) {
+      setExpanded(prev => ({ ...prev, [folder.id]: true }));
+      if (parentId) setExpanded(prev => ({ ...prev, [parentId]: true }));
+      else setExpanded(prev => ({ ...prev, [collectionId]: true }));
+    }
   };
 
-  const handleAddRequest = (collectionId: string, folderId: string | null = null, e: React.MouseEvent) => {
-    e.stopPropagation();
-    const name = prompt('New Request Name:');
-    if (name) createRequest(collectionId, folderId, name);
+  const handleAddRequest = async (collectionId: string, folderId: string | null = null, e?: React.MouseEvent) => {
+    if (e) e.stopPropagation();
+    createRequest(collectionId, folderId, 'New Request');
+    if (folderId) setExpanded(prev => ({ ...prev, [folderId]: true }));
+    else setExpanded(prev => ({ ...prev, [collectionId]: true }));
   };
 
   const handleDeleteCollection = (id: string, e: React.MouseEvent) => {
@@ -79,8 +94,8 @@ export const CollectionTree: React.FC<{ searchTerm?: string }> = ({ searchTerm =
     if (confirm('Delete this collection?')) deleteCollection(id);
   };
 
-  const handleDeleteFolder = (id: string, collectionId: string, e: React.MouseEvent) => {
-    e.stopPropagation();
+  const handleDeleteFolder = (id: string, collectionId: string, e?: React.MouseEvent) => {
+    if (e) e.stopPropagation();
     if (confirm('Delete this folder?')) deleteFolder(id, collectionId);
   };
 
@@ -121,6 +136,18 @@ export const CollectionTree: React.FC<{ searchTerm?: string }> = ({ searchTerm =
     a.click();
     document.body.removeChild(a);
     URL.revokeObjectURL(url);
+  };
+
+  const saveRename = () => {
+    if (editingItem && editingName.trim()) {
+      if (editingItem.type === 'collection') {
+        updateCollection(editingItem.id, editingName.trim());
+      } else {
+        const folder = Object.values(folders).flat().find(f => f.id === editingItem.id);
+        if (folder) updateFolder(folder.id, folder.collection_id, editingName.trim());
+      }
+    }
+    setEditingItem(null);
   };
 
   const getMethodColor = (method: string) => {
@@ -183,20 +210,68 @@ export const CollectionTree: React.FC<{ searchTerm?: string }> = ({ searchTerm =
 
     return (
       <div key={folder.id} style={{ paddingLeft: 16 }}>
-        <div className="collection-item" onClick={e => toggleExpand(folder.id, e)}>
+        <div className="collection-item" onClick={e => toggleExpand(folder.id, e)} style={{ position: 'relative' }}>
           {isExpanded ? <ChevronDown size={14} /> : <ChevronRight size={14} />}
           <FolderIcon size={14} className="icon" />
-          <span style={{ flex: 1 }}>{folder.name}</span>
 
-          <button className="icon-btn-small" onClick={e => handleAddFolder(folder.collection_id, folder.id, e)}>
-            <Plus size={12} />
-          </button>
-          <button className="icon-btn-small" onClick={e => handleAddRequest(folder.collection_id, folder.id, e)}>
-            <Plus size={12} />
-          </button>
-          <button className="icon-btn-small" onClick={e => handleDeleteFolder(folder.id, folder.collection_id, e)}>
-            <Trash2 size={12} />
-          </button>
+          {editingItem?.type === 'folder' && editingItem.id === folder.id ? (
+            <input
+              autoFocus
+              className="rename-input"
+              value={editingName}
+              onChange={e => setEditingName(e.target.value)}
+              onBlur={saveRename}
+              onKeyDown={e => {
+                if (e.key === 'Enter') saveRename();
+                if (e.key === 'Escape') setEditingItem(null);
+              }}
+              style={{ flex: 1, border: '1px solid hsl(var(--primary))', background: 'transparent', color: 'hsl(var(--text-main))', outline: 'none', padding: '2px 4px', fontSize: '13px', borderRadius: '4px' }}
+              onClick={e => e.stopPropagation()}
+            />
+          ) : (
+            <span style={{ flex: 1 }} onDoubleClick={(e) => {
+              e.stopPropagation();
+              setEditingItem({ type: 'folder', id: folder.id });
+              setEditingName(folder.name);
+            }}>{folder.name}</span>
+          )}
+
+          <div className="action-menu-container" style={{ position: 'relative' }}>
+            <button className="icon-btn-small" onClick={e => {
+              e.stopPropagation();
+              if (activeMenu === folder.id) {
+                setActiveMenu(null);
+              } else {
+                const rect = e.currentTarget.getBoundingClientRect();
+                setMenuPos({ top: rect.bottom + 4, left: rect.right - 140 });
+                setActiveMenu(folder.id);
+              }
+            }}>
+              <MoreHorizontal size={14} />
+            </button>
+            {activeMenu === folder.id && menuPos && (
+              <div className="dropdown-menu" style={{
+                position: 'fixed', left: menuPos.left, top: menuPos.top, zIndex: 1000000,
+                background: 'hsl(var(--bg-surface))', border: '1px solid hsl(var(--border-color))',
+                borderRadius: '6px', padding: '4px', minWidth: '140px',
+                boxShadow: '0 4px 12px rgba(0,0,0,0.5)', display: 'flex', flexDirection: 'column', gap: '2px'
+              }}>
+                <button className="dropdown-item" onClick={(e) => { e.stopPropagation(); setActiveMenu(null); handleAddRequest(folder.collection_id, folder.id); }}>
+                  Add request
+                </button>
+                <button className="dropdown-item" onClick={(e) => { e.stopPropagation(); setActiveMenu(null); handleAddFolder(folder.collection_id, folder.id); }}>
+                  Add folder
+                </button>
+                <button className="dropdown-item" onClick={(e) => { e.stopPropagation(); setActiveMenu(null); setEditingItem({ type: 'folder', id: folder.id }); setEditingName(folder.name); }}>
+                  Rename
+                </button>
+                <div style={{ height: '1px', background: 'hsl(var(--border-color))', margin: '2px 0' }} />
+                <button className="dropdown-item danger" onClick={(e) => { e.stopPropagation(); setActiveMenu(null); handleDeleteFolder(folder.id, folder.collection_id); }} style={{ color: 'hsl(var(--color-danger))' }}>
+                  Delete
+                </button>
+              </div>
+            )}
+          </div>
         </div>
         {isExpanded && children.map(child => renderFolder(child, allFolders))}
         {isExpanded && folderRequests.filter(r => r.name.toLowerCase().includes(lowerSearch)).map(renderRequest)}
@@ -245,26 +320,70 @@ export const CollectionTree: React.FC<{ searchTerm?: string }> = ({ searchTerm =
 
         return (
           <div key={col.id}>
-            <div className="collection-item" onClick={e => toggleExpand(col.id, e)}>
+            <div className="collection-item" onClick={e => toggleExpand(col.id, e)} style={{ position: 'relative' }}>
               {isExpanded ? <ChevronDown size={14} /> : <ChevronRight size={14} />}
-              <span style={{ flex: 1, fontWeight: 500 }}>{col.name}</span>
-              <button
-                className="icon-btn-small"
-                onClick={e => handleExportCollection(col.id, e)}
-                title="Export Collection"
-              >
-                <Download size={12} />
-              </button>
-              <button className="icon-btn-small" onClick={e => handleAddFolder(col.id, null, e)} title="Add Folder">
-                <Plus size={12} />
-              </button>
-              <button
-                className="icon-btn-small"
-                onClick={e => handleDeleteCollection(col.id, e)}
-                title="Delete Collection"
-              >
-                <Trash2 size={12} />
-              </button>
+
+              {editingItem?.type === 'collection' && editingItem.id === col.id ? (
+                <input
+                  autoFocus
+                  className="rename-input"
+                  value={editingName}
+                  onChange={e => setEditingName(e.target.value)}
+                  onBlur={saveRename}
+                  onKeyDown={e => {
+                    if (e.key === 'Enter') saveRename();
+                    if (e.key === 'Escape') setEditingItem(null);
+                  }}
+                  style={{ flex: 1, border: '1px solid hsl(var(--primary))', background: 'transparent', color: 'hsl(var(--text-main))', outline: 'none', padding: '2px 4px', fontSize: '13px', borderRadius: '4px', fontWeight: 500 }}
+                  onClick={e => e.stopPropagation()}
+                />
+              ) : (
+                <span style={{ flex: 1, fontWeight: 500 }} onDoubleClick={(e) => {
+                  e.stopPropagation();
+                  setEditingItem({ type: 'collection', id: col.id });
+                  setEditingName(col.name);
+                }}>{col.name}</span>
+              )}
+
+              <div className="action-menu-container" style={{ position: 'relative' }}>
+                <button className="icon-btn-small" onClick={e => {
+                  e.stopPropagation();
+                  if (activeMenu === col.id) {
+                    setActiveMenu(null);
+                  } else {
+                    const rect = e.currentTarget.getBoundingClientRect();
+                    setMenuPos({ top: rect.bottom + 4, left: rect.right - 150 });
+                    setActiveMenu(col.id);
+                  }
+                }}>
+                  <MoreHorizontal size={14} />
+                </button>
+                {activeMenu === col.id && menuPos && (
+                  <div className="dropdown-menu" style={{
+                    position: 'fixed', left: menuPos.left, top: menuPos.top, zIndex: 1000000,
+                    background: 'hsl(var(--bg-surface))', border: '1px solid hsl(var(--border-color))',
+                    borderRadius: '6px', padding: '4px', minWidth: '150px',
+                    boxShadow: '0 4px 12px rgba(0,0,0,0.5)', display: 'flex', flexDirection: 'column', gap: '2px'
+                  }}>
+                    <button className="dropdown-item" onClick={(e) => { e.stopPropagation(); setActiveMenu(null); handleAddRequest(col.id, null); }}>
+                      Add request
+                    </button>
+                    <button className="dropdown-item" onClick={(e) => { e.stopPropagation(); setActiveMenu(null); handleAddFolder(col.id, null); }}>
+                      Add folder
+                    </button>
+                    <button className="dropdown-item" onClick={(e) => { e.stopPropagation(); setActiveMenu(null); setEditingItem({ type: 'collection', id: col.id }); setEditingName(col.name); }}>
+                      Rename
+                    </button>
+                    <button className="dropdown-item" onClick={(e) => { e.stopPropagation(); setActiveMenu(null); handleExportCollection(col.id, e); }}>
+                      Export
+                    </button>
+                    <div style={{ height: '1px', background: 'hsl(var(--border-color))', margin: '2px 0' }} />
+                    <button className="dropdown-item danger" onClick={(e) => { e.stopPropagation(); setActiveMenu(null); handleDeleteCollection(col.id, e); }} style={{ color: 'hsl(var(--color-danger))' }}>
+                      Delete
+                    </button>
+                  </div>
+                )}
+              </div>
             </div>
 
             {isExpanded && rootFolders.map(folder => renderFolder(folder, colFolders))}

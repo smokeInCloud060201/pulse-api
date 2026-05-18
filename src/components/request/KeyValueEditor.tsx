@@ -1,6 +1,6 @@
 import React from 'react';
 import { KeyValuePair } from '../../types/request';
-import { Trash2, Plus, FileUp } from 'lucide-react';
+import { Trash2, FileUp } from 'lucide-react';
 import { open } from '@tauri-apps/plugin-dialog';
 import { Dropdown } from '../ui/Dropdown';
 import './RequestEditor.css';
@@ -12,20 +12,37 @@ interface KeyValueEditorProps {
 }
 
 export const KeyValueEditor: React.FC<KeyValueEditorProps> = ({ items, onChange, allowFileTypes = false }) => {
+  const displayItems = [...items];
+  const lastItem = displayItems[displayItems.length - 1];
+
+  // Add an empty row if the list is empty or the last item has content
+  if (!lastItem || lastItem.key !== '' || (lastItem.value !== '' && lastItem.value !== undefined)) {
+    displayItems.push({ key: '', value: '', enabled: true, value_type: 'text' });
+  }
+
   const updateItem = (index: number, field: keyof KeyValuePair, value: string | boolean) => {
     const newItems = [...items];
-    newItems[index] = { ...newItems[index], [field]: value };
+
+    if (index >= newItems.length) {
+      // User is typing in the placeholder row
+      const newItem: KeyValuePair = { key: '', value: '', enabled: true, value_type: 'text' };
+      (newItem as any)[field] = value;
+      newItems.push(newItem);
+    } else {
+      newItems[index] = { ...newItems[index], [field]: value };
+    }
+
     onChange(newItems);
   };
 
   const removeItem = (index: number) => {
+    if (index >= items.length) {
+      // Placeholder row, nothing to remove
+      return;
+    }
     const newItems = [...items];
     newItems.splice(index, 1);
     onChange(newItems);
-  };
-
-  const addItem = () => {
-    onChange([...items, { key: '', value: '', enabled: true, value_type: 'text' }]);
   };
 
   const handleSelectFile = async (index: number) => {
@@ -51,7 +68,7 @@ export const KeyValueEditor: React.FC<KeyValueEditorProps> = ({ items, onChange,
         <div className="kv-col-action"></div>
       </div>
 
-      {items.map((item, i) => (
+      {displayItems.map((item, i) => (
         <div key={i} className="kv-row">
           <div className="kv-col-check">
             <input type="checkbox" checked={item.enabled} onChange={e => updateItem(i, 'enabled', e.target.checked)} />
@@ -66,22 +83,24 @@ export const KeyValueEditor: React.FC<KeyValueEditorProps> = ({ items, onChange,
               style={{ flex: 1 }}
             />
             {allowFileTypes && (
-              <Dropdown
-                value={item.value_type || 'text'}
-                onChange={(value) => updateItem(i, 'value_type', value)}
-                options={[
-                  { value: 'text', label: 'Text' },
-                  { value: 'file', label: 'File' },
-                ]}
-                className="kv-type-select"
-                style={{ width: '70px', flexShrink: 0 }}
-                triggerStyle={{ padding: '0 8px', height: '100%', border: 'none', backgroundColor: 'transparent' }}
-              />
+              <div style={{ height: '100%', display: 'flex', alignItems: 'center', borderLeft: '1px solid hsl(var(--border-light))', background: 'hsla(0, 0%, 50%, 0.05)' }}>
+                <Dropdown
+                  value={item.value_type || 'text'}
+                  onChange={(value) => updateItem(i, 'value_type', value)}
+                  options={[
+                    { value: 'text', label: 'Text' },
+                    { value: 'file', label: 'File' },
+                  ]}
+                  className="kv-type-select"
+                  style={{ width: '70px', flexShrink: 0 }}
+                  triggerStyle={{ padding: '0 8px', height: '100%', border: 'none', backgroundColor: 'transparent' }}
+                />
+              </div>
             )}
           </div>
           <div className="kv-col-value" style={{ display: 'flex', alignItems: 'center' }}>
             {allowFileTypes && item.value_type === 'file' ? (
-              <div style={{ display: 'flex', alignItems: 'center', width: '100%', height: '100%' }}>
+              <div style={{ position: 'relative', display: 'flex', alignItems: 'center', width: '100%', height: '100%' }}>
                 <input
                   type="text"
                   placeholder="Select a file..."
@@ -89,12 +108,24 @@ export const KeyValueEditor: React.FC<KeyValueEditorProps> = ({ items, onChange,
                   readOnly
                   onClick={() => handleSelectFile(i)}
                   className="kv-input"
-                  style={{ cursor: 'pointer', color: 'hsl(var(--text-muted))' }}
+                  style={{ cursor: 'pointer', color: 'hsl(var(--text-muted))', paddingRight: '32px' }}
                 />
-                <button 
-                  className="icon-btn-small" 
+                <button
+                  className="icon-btn-small"
                   onClick={() => handleSelectFile(i)}
-                  style={{ color: 'hsl(var(--text-muted))', marginRight: '8px' }}
+                  style={{
+                    position: 'absolute',
+                    right: '4px',
+                    color: 'hsl(var(--text-muted))',
+                    background: 'transparent',
+                    border: 'none',
+                    display: 'flex',
+                    alignItems: 'center',
+                    justifyContent: 'center',
+                    padding: '4px',
+                    cursor: 'pointer'
+                  }}
+                  title="Select File"
                 >
                   <FileUp size={16} />
                 </button>
@@ -117,11 +148,6 @@ export const KeyValueEditor: React.FC<KeyValueEditorProps> = ({ items, onChange,
         </div>
       ))}
 
-      <div className="kv-row add-row">
-        <button className="text-btn" onClick={addItem}>
-          <Plus size={14} style={{ marginRight: 4 }} /> Add Row
-        </button>
-      </div>
     </div>
   );
 };

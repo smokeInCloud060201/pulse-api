@@ -166,3 +166,23 @@ pub fn import_collection_data(
     tx.commit().map_err(|e| e.to_string())?;
     Ok(())
 }
+
+#[tauri::command]
+pub fn update_collection(state: State<'_, DbState>, id: String, name: String) -> Result<(), String> {
+    let db = state.db.lock().map_err(|e| e.to_string())?;
+    db.execute(
+        "UPDATE collections SET name = ?1, updated_at = CURRENT_TIMESTAMP WHERE id = ?2",
+        (&name, &id),
+    ).map_err(|e| e.to_string())?;
+    Ok(())
+}
+
+#[tauri::command]
+pub fn update_folder(state: State<'_, DbState>, id: String, name: String) -> Result<(), String> {
+    let db = state.db.lock().map_err(|e| e.to_string())?;
+    db.execute(
+        "UPDATE folders SET name = ?1 WHERE id = ?2",
+        (&name, &id),
+    ).map_err(|e| e.to_string())?;
+    Ok(())
+}

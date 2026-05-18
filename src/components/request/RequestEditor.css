@@ -1,7 +1,7 @@
 .request-config {
   display: flex;
-  padding: 12px 16px;
-  gap: 12px;
+  padding: 16px;
+  gap: 16px;
   background: hsl(var(--bg-panel));
   border-bottom: 1px solid hsl(var(--border-light));
   align-items: center;
@@ -140,28 +140,29 @@
   background: hsl(var(--primary));
   color: white;
   border: none;
-  padding: 8px 16px;
+  padding: 10px 20px;
   font-weight: 600;
+  font-size: 0.95rem;
   cursor: pointer;
   display: flex;
   align-items: center;
   justify-content: center;
-  transition: opacity 0.2s;
+  transition: opacity 0.2s, filter 0.2s;
 }
 
 .main-send {
   border-radius: 6px 0 0 6px;
   border-right: 1px solid hsla(0, 0%, 0%, 0.1);
-  min-width: 80px;
+  min-width: 90px;
 }
 
 .dropdown-send {
   border-radius: 0 6px 6px 0;
-  padding: 8px 8px;
+  padding: 10px 10px;
 }
 
 .send-btn:hover {
-  opacity: 0.9;
+  filter: brightness(1.1);
 }
 
 .send-btn:disabled {
@@ -318,4 +319,81 @@
   color: hsl(var(--text-main));
   border-bottom-color: #ff6c37;
   font-weight: 500;
+}
+
+/* Empty Response State */
+.empty-response-state {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  height: 100%;
+  color: hsl(var(--text-muted));
+  text-align: center;
+  padding: 32px;
+}
+
+.empty-state-icon {
+  font-size: 3rem;
+  margin-bottom: 16px;
+  opacity: 0.8;
+  filter: grayscale(0.5);
+}
+
+.empty-response-state h3 {
+  font-size: 1.1rem;
+  font-weight: 600;
+  margin: 0 0 8px 0;
+  color: hsl(var(--text-main));
+}
+
+.empty-response-state p {
+  font-size: 0.9rem;
+  margin: 0;
+}
+
+/* Response Headers Table */
+.response-headers-container {
+  height: 100%;
+  overflow: auto;
+  padding: 16px;
+  background: var(--bg-secondary);
+}
+
+.headers-table {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: 0.85rem;
+  border: 1px solid hsl(var(--border-light));
+  border-radius: 4px;
+}
+
+.headers-table th,
+.headers-table td {
+  padding: 8px 12px;
+  text-align: left;
+  border-bottom: 1px solid hsl(var(--border-light));
+}
+
+.headers-table th {
+  font-weight: 600;
+  color: hsl(var(--text-muted));
+  background: hsla(0, 0%, 50%, 0.05);
+  border-right: 1px solid hsl(var(--border-light));
+}
+
+.headers-table td {
+  font-family: var(--font-mono);
+  word-break: break-word;
+}
+
+.headers-table .header-key {
+  color: hsl(var(--text-main));
+  font-weight: 500;
+  border-right: 1px solid hsl(var(--border-light));
+  width: 30%;
+}
+
+.headers-table .header-value {
+  color: hsl(var(--text-muted));
 }

@@ -1,8 +1,9 @@
 import React, { useState } from 'react';
-import { Search, Sun, Moon, Folder, Server, Clock, User } from 'lucide-react';
+import { Search, Sun, Moon, Folder, Server, Clock, User, Plus } from 'lucide-react';
 import { CollectionTree } from '../collections/CollectionTree';
 import { ImportModal } from './ImportModal';
 import { useTabStore } from '../../stores/tabStore';
+import { useCollectionStore } from '../../stores/collectionStore';
 import { v4 as uuidv4 } from 'uuid';
 import { ApiRequest } from '../../types/request';
 import './Sidebar.css';
@@ -12,6 +13,11 @@ export const Sidebar: React.FC = () => {
   const [activeTab, setActiveTab] = useState<'collections' | 'environments' | 'history'>('collections');
   const [theme, setTheme] = useState(localStorage.getItem('pulse-theme') || 'dark');
   const { openTab } = useTabStore();
+  const { addCollection } = useCollectionStore();
+
+  const handleCreateCollection = async () => {
+    await addCollection('New Collection');
+  };
 
   const handleNewRequest = () => {
     const newReq: ApiRequest = {
@@ -90,8 +96,8 @@ export const Sidebar: React.FC = () => {
       {/* Main List Column */}
       <div className="sidebar-content">
         <div className="sidebar-content-header">
-          <div className="sidebar-workspace-title">
-            <User size={14} style={{ marginRight: 6 }} /> My Workspace
+          <div className="sidebar-workspace-title" style={{ display: 'flex', alignItems: 'center', gap: '4px', flex: 1 }}>
+            <User size={14} /> My Workspace
           </div>
           <div style={{ display: 'flex', gap: 4 }}>
             <button className="sidebar-header-btn" onClick={handleNewRequest}>New</button>
@@ -101,9 +107,19 @@ export const Sidebar: React.FC = () => {
           </div>
         </div>
 
-        <div className="sidebar-filter-bar">
-          <Search size={12} className="sidebar-filter-icon" />
-          <input type="text" className="sidebar-filter-input" placeholder="Filter..." />
+        <div style={{ display: 'flex', alignItems: 'center', padding: '0 12px 8px 12px', gap: '4px' }}>
+          <div className="sidebar-filter-bar" style={{ flex: 1, margin: 0 }}>
+            <Search size={12} className="sidebar-filter-icon" />
+            <input type="text" className="sidebar-filter-input" placeholder="Filter..." />
+          </div>
+          <button 
+            className="sidebar-header-btn" 
+            onClick={handleCreateCollection} 
+            title="New Collection" 
+            style={{ padding: '4px', height: '28px', width: '28px', display: 'flex', alignItems: 'center', justifyContent: 'center' }}
+          >
+            <Plus size={14} />
+          </button>
         </div>
 
         <div className="sidebar-collections">

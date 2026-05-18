@@ -9,10 +9,12 @@ interface CollectionState {
 
   loadCollections: () => Promise<void>;
   loadFolders: (collectionId: string) => Promise<void>;
-  addCollection: (name: string, description?: string) => Promise<void>;
+  addCollection: (name: string, description?: string) => Promise<Collection>;
   deleteCollection: (id: string) => Promise<void>;
-  addFolder: (collectionId: string, parentFolderId: string | null, name: string) => Promise<void>;
+  updateCollection: (id: string, name: string) => Promise<void>;
+  addFolder: (collectionId: string, parentFolderId: string | null, name: string) => Promise<Folder>;
   deleteFolder: (id: string, collectionId: string) => Promise<void>;
+  updateFolder: (id: string, collectionId: string, name: string) => Promise<void>;
   importCollectionData: (collection: Collection, folders: Folder[], requests: any[]) => Promise<void>;
 }
 
@@ -46,8 +48,9 @@ export const useCollectionStore = create<CollectionState>((set, get) => ({
   },
 
   addCollection: async (name: string, description?: string) => {
-    await collectionService.createCollection(name, description);
+    const col = await collectionService.createCollection(name, description);
     await get().loadCollections();
+    return col;
   },
 
   deleteCollection: async (id: string) => {
@@ -55,13 +58,24 @@ export const useCollectionStore = create<CollectionState>((set, get) => ({
     await get().loadCollections();
   },
 
+  updateCollection: async (id: string, name: string) => {
+    await collectionService.updateCollection(id, name);
+    await get().loadCollections();
+  },
+
   addFolder: async (collectionId: string, parentFolderId: string | null, name: string) => {
-    await collectionService.createFolder(collectionId, parentFolderId, name);
+    const folder = await collectionService.createFolder(collectionId, parentFolderId, name);
     await get().loadFolders(collectionId);
+    return folder;
   },
 
   deleteFolder: async (id: string, collectionId: string) => {
     await collectionService.deleteFolder(id);
+    await get().loadFolders(collectionId);
+  },
+
+  updateFolder: async (id: string, collectionId: string, name: string) => {
+    await collectionService.updateFolder(id, name);
     await get().loadFolders(collectionId);
   },
 

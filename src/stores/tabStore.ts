@@ -18,6 +18,8 @@ interface TabState {
   closeTab: (id: string) => void;
   setActiveTab: (id: string) => void;
   updateTabRequest: (request: ApiRequest) => void;
+  markTabSaved: (id: string) => void;
+  updateTabId: (oldId: string, newId: string, request: ApiRequest) => void;
   saveState: () => Promise<void>;
 }
 
@@ -34,8 +36,15 @@ export const useTabStore = create<TabState>((set, get) => ({
       const savedTabs = (await tauriStore.get('tabs')) as Tab[] | null;
       const savedActiveTab = (await tauriStore.get('activeTabId')) as string | null;
 
+      const processedTabs = (savedTabs || []).map(t => {
+        if (!t.request.collection_id) {
+          return { ...t, isDirty: true };
+        }
+        return t;
+      });
+
       set({
-        tabs: savedTabs || [],
+        tabs: processedTabs,
         activeTabId: savedActiveTab || null,
         isInitialized: true
       });
@@ -60,7 +69,8 @@ export const useTabStore = create<TabState>((set, get) => ({
     if (existing) {
       set({ activeTabId: request.id });
     } else {
-      set({ tabs: [...tabs, { id: request.id, request }], activeTabId: request.id });
+      const isDirty = !request.collection_id;
+      set({ tabs: [...tabs, { id: request.id, request, isDirty }], activeTabId: request.id });
     }
     get().saveState();
   },
@@ -92,6 +102,23 @@ export const useTabStore = create<TabState>((set, get) => ({
     const { tabs } = get();
     set({
       tabs: tabs.map(t => (t.id === request.id ? { ...t, request, isDirty: true } : t))
+    });
+    get().saveState();
+  },
+
+  markTabSaved: (id: string) => {
+    const { tabs } = get();
+    set({
+      tabs: tabs.map(t => (t.id === id ? { ...t, isDirty: false } : t))
+    });
+    get().saveState();
+  },
+
+  updateTabId: (oldId: string, newId: string, request: ApiRequest) => {
+    const { tabs, activeTabId } = get();
+    set({
+      tabs: tabs.map(t => (t.id === oldId ? { ...t, id: newId, request, isDirty: false } : t)),
+      activeTabId: activeTabId === oldId ? newId : activeTabId
     });
     get().saveState();
   }

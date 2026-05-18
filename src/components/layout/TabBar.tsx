@@ -1,6 +1,9 @@
 import React from 'react';
 import { X } from 'lucide-react';
+import { ask } from '@tauri-apps/plugin-dialog';
 import { useTabStore } from '../../stores/tabStore';
+import { useRequestStore } from '../../stores/requestStore';
+import { EnvSelector } from './EnvSelector';
 import './TabBar.css';
 
 const getMethodColor = (method: string) => {
@@ -21,12 +24,16 @@ const getMethodColor = (method: string) => {
 };
 
 export const TabBar: React.FC = () => {
-  const { tabs, activeTabId, setActiveTab, closeTab } = useTabStore();
+  const { tabs, activeTabId, setActiveTab, closeTab, markTabSaved } = useTabStore();
+  const { updateRequest } = useRequestStore();
 
   if (tabs.length === 0) {
     return (
       <div className="tab-bar">
         <div className="tabs-scroll"></div>
+        <div style={{ display: 'flex', alignItems: 'center', padding: '0 8px', marginLeft: 'auto' }}>
+          <EnvSelector />
+        </div>
       </div>
     );
   }
@@ -46,12 +53,27 @@ export const TabBar: React.FC = () => {
             </span>
             <span className="tab-title">
               {tab.request.name || 'Untitled Request'}
-              {tab.isDirty && <span style={{ marginLeft: 4, color: 'hsl(var(--color-warning))' }}>•</span>}
             </span>
+            {tab.isDirty && <span style={{ color: 'hsl(var(--color-warning))', flexShrink: 0, fontSize: '1.2rem', lineHeight: 1 }}>•</span>}
             <button
               className="tab-close"
-              onClick={e => {
+              onClick={async (e) => {
                 e.stopPropagation();
+                if (tab.isDirty) {
+                  const shouldSave = await ask(`Do you want to save the changes to "${tab.request.name || 'Untitled Request'}"?`, {
+                    title: 'Unsaved Changes',
+                    kind: 'warning',
+                  });
+                  if (shouldSave) {
+                    try {
+                      await updateRequest(tab.request);
+                      markTabSaved(tab.id);
+                    } catch (error) {
+                      console.error('Failed to save request:', error);
+                      return; // abort close if save failed
+                    }
+                  }
+                }
                 closeTab(tab.id);
               }}
             >
@@ -59,6 +81,9 @@ export const TabBar: React.FC = () => {
             </button>
           </div>
         ))}
+      </div>
+      <div style={{ display: 'flex', alignItems: 'center', padding: '0 8px', marginLeft: 'auto' }}>
+        <EnvSelector />
       </div>
     </div>
   );

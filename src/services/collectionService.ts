@@ -14,6 +14,10 @@ export const collectionService = {
     return invoke('delete_collection', { id });
   },
 
+  updateCollection: async (id: string, name: string): Promise<void> => {
+    return invoke('update_collection', { id, name });
+  },
+
   getFolders: async (collectionId: string): Promise<Folder[]> => {
     return invoke('get_folders', { collectionId });
   },
@@ -24,6 +28,10 @@ export const collectionService = {
 
   deleteFolder: async (id: string): Promise<void> => {
     return invoke('delete_folder', { id });
+  },
+
+  updateFolder: async (id: string, name: string): Promise<void> => {
+    return invoke('update_folder', { id, name });
   },
 
   importCollectionData: async (collection: Collection, folders: Folder[], requests: any[]): Promise<void> => {

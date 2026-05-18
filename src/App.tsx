@@ -5,6 +5,7 @@ import { Sidebar } from './components/layout/Sidebar';
 import { TabBar } from './components/layout/TabBar';
 import { RequestEditor } from './components/request/RequestEditor';
 import { useTabStore } from './stores/tabStore';
+import { useResizer } from './utils/useResizer';
 import { Rocket, Plus } from 'lucide-react';
 import { v4 as uuidv4 } from 'uuid';
 import { ApiRequest } from './types/request';
@@ -12,6 +13,14 @@ import './styles/theme.css';
 
 function App() {
   const { init, isInitialized, activeTabId, tabs, openTab } = useTabStore();
+  
+  const { size: sidebarWidth, isDragging: isSidebarDragging, handleMouseDown: handleSidebarMouseDown } = useResizer({
+    initialSize: 280,
+    direction: 'horizontal',
+    minSize: 200,
+    maxSize: 600,
+    storageKey: 'pulse-sidebar-width'
+  });
 
   const handleNewRequest = () => {
     const newReq: ApiRequest = {
@@ -46,7 +55,15 @@ function App() {
     <div className="app-container" style={{ display: 'flex', flexDirection: 'column', height: '100vh' }}>
       <TopNavBar />
       <div className="main-content" style={{ display: 'flex', flex: 1, overflow: 'hidden' }}>
-        <Sidebar />
+        <div style={{ width: sidebarWidth, flexShrink: 0, display: 'flex' }}>
+          <Sidebar />
+        </div>
+        
+        <div 
+          className={`app-resizer app-resizer-vertical ${isSidebarDragging ? 'is-dragging' : ''}`}
+          onMouseDown={handleSidebarMouseDown}
+        />
+
         <div className="content-area" style={{ flex: 1, display: 'flex', flexDirection: 'column', overflow: 'hidden' }}>
           <div
             style={{
