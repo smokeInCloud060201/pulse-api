@@ -1,0 +1,111 @@
+use std::time::Instant;
+use reqwest::{Client, Method, header::{HeaderMap, HeaderName, HeaderValue}};
+use std::str::FromStr;
+use crate::models::request::{ApiRequest, KeyValuePair};
+use crate::models::response::ApiResponse;
+
+pub async fn send_rest_request(req: &ApiRequest) -> Result<ApiResponse, String> {
+    let client = Client::builder()
+        .build()
+        .map_err(|e| e.to_string())?;
+
+    let method = Method::from_str(&req.method).map_err(|e| e.to_string())?;
+    
+    // Parse headers
+    let mut header_map = HeaderMap::new();
+    if let Ok(headers) = serde_json::from_str::<Vec<KeyValuePair>>(&req.headers) {
+        for header in headers {
+            if header.enabled && !header.key.is_empty() {
+                if let (Ok(name), Ok(value)) = (HeaderName::from_str(&header.key), HeaderValue::from_str(&header.value)) {
+                    header_map.insert(name, value);
+                }
+            }
+        }
+    }
+
+    // Parse query params and append to URL
+    let mut final_url = req.url.clone();
+    if let Ok(params) = serde_json::from_str::<Vec<KeyValuePair>>(&req.query_params) {
+        let mut query_string = String::new();
+        for param in params {
+            if param.enabled && !param.key.is_empty() {
+                if !query_string.is_empty() {
+                    query_string.push('&');
+                }
+                query_string.push_str(&urlencoding::encode(&param.key));
+                query_string.push('=');
+                query_string.push_str(&urlencoding::encode(&param.value));
+            }
+        }
+        if !query_string.is_empty() {
+            if final_url.contains('?') {
+                final_url.push('&');
+            } else {
+                final_url.push('?');
+            }
+            final_url.push_str(&query_string);
+        }
+    }
+
+    let mut builder = client.request(method, &final_url).headers(header_map);
+
+    // Parse body if present
+    if let Some(body_type) = &req.body_type {
+        if let Some(body_content) = &req.body_content {
+            if !body_content.is_empty() {
+                match body_type.as_str() {
+                    "json" => {
+                        // Just send raw string, header should be set by user or we could auto-set it
+                        builder = builder.body(body_content.clone());
+                    },
+                    "raw" => {
+                        builder = builder.body(body_content.clone());
+                    },
+                    _ => {
+                        builder = builder.body(body_content.clone());
+                    }
+                }
+            }
+        }
+    }
+
+    let start_time = Instant::now();
+    let response = builder.send().await.map_err(|e| e.to_string())?;
+    let latency_ms = start_time.elapsed().as_millis() as u64;
+
+    let status = response.status().as_u16();
+    let status_text = response.status().canonical_reason().unwrap_or("").to_string();
+    
+    let mut res_headers = Vec::new();
+    for (k, v) in response.headers() {
+        res_headers.push((k.as_str().to_string(), v.to_str().unwrap_or("").to_string()));
+    }
+
+    let body_bytes = response.bytes().await.map_err(|e| e.to_string())?;
+    let size_bytes = body_bytes.len();
+    
+    // Attempt to parse as utf8 string
+    let body_string = String::from_utf8_lossy(&body_bytes).to_string();
+
+    // Guess body type from response headers
+    let mut body_type = "text".to_string();
+    if let Some((_, v)) = res_headers.iter().find(|(k, _)| k.to_lowercase() == "content-type") {
+        if v.contains("application/json") {
+            body_type = "json".to_string();
+        } else if v.contains("text/html") {
+            body_type = "html".to_string();
+        } else if v.contains("xml") {
+            body_type = "xml".to_string();
+        }
+    }
+
+    Ok(ApiResponse {
+        status,
+        status_text,
+        latency_ms,
+        size_bytes,
+        headers: res_headers,
+        body: body_string,
+        body_type,
+    })
+}

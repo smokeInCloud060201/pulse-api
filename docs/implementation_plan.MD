@@ -421,19 +421,19 @@ flowchart LR
 
 ---
 
-### Sprint 2 — REST API Client *(Week 3-4)*
+### Sprint 2 — REST API Client *(Week 3-4)* - **[DONE]**
 
-| Task | Details |
-|------|---------|
-| Request CRUD | Create, edit, delete requests in folders |
-| REST adapter (`reqwest`) | GET, POST, PUT, PATCH, DELETE |
-| Request config UI | Method selector, URL bar, headers, params, body editors |
-| Body types | JSON, form-data, x-www-form-urlencoded, raw, binary |
-| Response panel | Body viewer (JSON/raw/HTML), headers, status, timing |
-| Tab system | Multiple open requests in tabs |
-| Request history | Log past requests with timestamp/status |
+| Task | Details | Status |
+|------|---------|--------|
+| Request CRUD | Create, edit, delete requests in folders | ✅ Done |
+| REST adapter (`reqwest`) | GET, POST, PUT, PATCH, DELETE | ✅ Done |
+| Request config UI | Method selector, URL bar, headers, params, body editors | ✅ Done |
+| Body types | JSON, form-data, x-www-form-urlencoded, raw, binary | ✅ Done |
+| Response panel | Body viewer (JSON/raw/HTML), headers, status, timing | ✅ Done |
+| Tab system | Multiple open requests in tabs | ✅ Done |
+| Request history | Log past requests with timestamp/status | ✅ Done |
 
-**Deliverable**: Fully functional REST client.
+**Deliverable**: Fully functional REST client. - **[COMPLETED]**
 
 ---
 
