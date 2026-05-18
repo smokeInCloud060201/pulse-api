@@ -83,7 +83,7 @@ export const RequestEditor: React.FC<RequestEditorProps> = ({ requestId }) => {
   }, [request, activeEnvironmentId, saveRequest]);
 
   const handleBodyChange = (value: string | undefined) => {
-    handleRequestChange({ ...request, body_content: value || '' });
+    handleRequestChange({ ...request, body_content: value || '' } as ApiRequest);
   };
 
   React.useEffect(() => {

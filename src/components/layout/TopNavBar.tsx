@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { Search, Settings, Bell, User, Plus } from 'lucide-react';
+import { Search, Settings, Plus } from 'lucide-react';
 import './TopNavBar.css';
 
 export const TopNavBar: React.FC = () => {

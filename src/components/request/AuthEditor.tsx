@@ -51,18 +51,7 @@ export const AuthEditor: React.FC<AuthEditorProps> = ({ headers, onChange }) => 
     onChange(newHeaders);
   };
 
-  const handleTypeChange = (e: React.ChangeEvent<HTMLSelectElement>) => {
-    const type = e.target.value as AuthType;
-    setAuthType(type);
-    if (type === 'none') {
-      updateAuthHeader('none', null);
-    } else if (type === 'bearer') {
-      updateAuthHeader('bearer', `Bearer ${bearerToken}`);
-    } else if (type === 'basic') {
-      const b64 = btoa(`${basicUsername}:${basicPassword}`);
-      updateAuthHeader('basic', `Basic ${b64}`);
-    }
-  };
+
 
   const handleBearerChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const token = e.target.value;
