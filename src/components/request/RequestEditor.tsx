@@ -75,8 +75,17 @@ export const RequestEditor: React.FC<RequestEditorProps> = ({ requestId }) => {
       }
       const res = await requestService.executeRequest(request, activeEnvironmentId);
       setResponse(res);
-    } catch (e) {
+    } catch (e: unknown) {
       console.error(e);
+      setResponse({
+        status: 0,
+        status_text: 'Error',
+        latency_ms: 0,
+        size_bytes: 0,
+        headers: [],
+        body: typeof e === 'string' ? e : (e instanceof Error ? e.message : JSON.stringify(e)),
+        body_type: 'text'
+      });
     } finally {
       setIsLoading(false);
     }
@@ -223,41 +232,68 @@ export const RequestEditor: React.FC<RequestEditorProps> = ({ requestId }) => {
 
   return (
     <div style={{ display: 'flex', flexDirection: 'column', height: '100%', backgroundColor: 'hsl(var(--bg-panel))' }}>
-      {/* Breadcrumbs Row */}
+      {/* Top Bar: Protocol, Name Input, Save, Env */}
       <div
-        style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', padding: '12px 16px 0 16px' }}
+        style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', padding: '12px 16px 0 16px', gap: '12px' }}
       >
-        <div
-          style={{
-            fontSize: '0.85rem',
-            color: 'hsl(var(--text-muted))',
-            display: 'flex',
-            alignItems: 'center',
-            gap: 6
-          }}
-        >
-          <span>REST API basics: CRUD, test & variable</span>
-          <span>/</span>
-          <span style={{ color: 'hsl(var(--text-main))', fontWeight: 500 }}>{request.name || 'Untitled Request'}</span>
-        </div>
-        <div style={{ display: 'flex', gap: 12, alignItems: 'center' }}>
-          <EnvSelector />
+        <div style={{ display: 'flex', alignItems: 'center', gap: '12px', flex: 1 }}>
+          <Dropdown
+            value={request.protocol || 'HTTP'}
+            onChange={(val) => handleRequestChange({ ...request, protocol: val })}
+            options={[
+              { value: 'HTTP', label: 'HTTP' },
+              { value: 'GraphQL', label: 'GraphQL' },
+              { value: 'WebSocket', label: 'WebSocket' },
+              { value: 'gRPC', label: 'gRPC' }
+            ]}
+            style={{ width: '120px' }}
+            triggerStyle={{ border: '1px solid hsl(var(--border-light))', borderRadius: '4px', padding: '4px 8px', width: '100%', display: 'flex', justifyContent: 'space-between' }}
+          />
+          <input
+            type="text"
+            value={request.name || ''}
+            onChange={(e) => handleRequestChange({ ...request, name: e.target.value })}
+            placeholder="Untitled Request"
+            style={{
+              background: 'transparent',
+              border: '1px solid transparent',
+              color: 'hsl(var(--text-main))',
+              fontSize: '0.95rem',
+              fontWeight: 600,
+              padding: '4px 8px',
+              borderRadius: '4px',
+              outline: 'none',
+              flex: 1,
+              maxWidth: '300px',
+              transition: 'border 0.2s'
+            }}
+            onFocus={(e) => e.target.style.border = '1px solid hsl(var(--border-light))'}
+            onBlur={(e) => e.target.style.border = '1px solid transparent'}
+          />
           <button
+            onClick={saveRequest}
             style={{
               display: 'flex',
               alignItems: 'center',
               gap: 4,
-              background: 'transparent',
+              background: 'hsl(var(--bg-surface))',
               border: '1px solid hsl(var(--border-light))',
-              padding: '4px 12px',
+              padding: '4px 16px',
               borderRadius: 4,
-              fontSize: '0.8rem',
+              fontSize: '0.85rem',
+              fontWeight: 500,
               cursor: 'pointer',
-              color: 'hsl(var(--text-main))'
+              color: 'hsl(var(--text-main))',
+              transition: 'background 0.2s'
             }}
+            onMouseOver={(e) => e.currentTarget.style.background = 'hsl(var(--bg-hover))'}
+            onMouseOut={(e) => e.currentTarget.style.background = 'hsl(var(--bg-surface))'}
           >
             Save
           </button>
+        </div>
+        <div style={{ display: 'flex', gap: 12, alignItems: 'center' }}>
+          <EnvSelector />
         </div>
       </div>
 
@@ -351,9 +387,9 @@ export const RequestEditor: React.FC<RequestEditorProps> = ({ requestId }) => {
                         const isChecked = mainBodyType === t;
                         return (
                           <label key={t} style={{ display: 'flex', alignItems: 'center', gap: 4, cursor: 'pointer', color: isChecked ? 'hsl(var(--text-main))' : 'hsl(var(--text-muted))' }}>
-                            <input 
-                              type="radio" 
-                              checked={isChecked} 
+                            <input
+                              type="radio"
+                              checked={isChecked}
                               onChange={() => handleRequestChange({ ...request, body_type: t === 'raw' ? 'json' : t })}
                               style={{ accentColor: 'hsl(var(--primary))' }}
                             />
@@ -390,7 +426,7 @@ export const RequestEditor: React.FC<RequestEditorProps> = ({ requestId }) => {
                             try {
                               const selected = await open({ multiple: false });
                               if (selected && typeof selected === 'string') handleBodyChange(selected);
-                            } catch(e) {}
+                            } catch (e) { }
                           }} style={{ padding: '4px 8px', border: '1px solid var(--border-light)', borderRadius: 4 }}>
                             Select File
                           </button>
@@ -465,21 +501,21 @@ export const RequestEditor: React.FC<RequestEditorProps> = ({ requestId }) => {
             flex: 1,
             display: 'flex',
             flexDirection: 'column',
-            background: 'var(--bg-secondary)'
+            background: 'var(--bg-secondary)',
+            margin: '12px',
+            border: '1px solid var(--border-light)',
+            borderRadius: '8px',
+            overflow: 'hidden'
           }}
         >
           {request.protocol === 'WebSocket' ? (
             <WebSocketResponse messages={wsMessages} />
           ) : (
             <>
-              <div
-                style={{
-                  padding: '12px 16px',
-                  borderBottom: '1px solid var(--border-color)',
-                  fontWeight: 600
-                }}
-              >
-                Response
+              <div className="request-editor-tabs" style={{ background: 'var(--bg-panel)' }}>
+                <div className="req-tab active" style={{ cursor: 'default' }}>
+                  Response
+                </div>
               </div>
               <div style={{ flex: 1, overflow: 'hidden' }}>
                 {isLoading ? (
@@ -491,8 +527,9 @@ export const RequestEditor: React.FC<RequestEditorProps> = ({ requestId }) => {
                         padding: '12px 16px',
                         display: 'flex',
                         gap: '16px',
-                        borderBottom: '1px solid var(--border-color)',
-                        fontSize: '0.9rem'
+                        borderBottom: '1px solid var(--border-light)',
+                        fontSize: '0.9rem',
+                        background: 'var(--bg-surface)'
                       }}
                     >
                       <span
@@ -524,7 +561,7 @@ export const RequestEditor: React.FC<RequestEditorProps> = ({ requestId }) => {
                     {response.console_logs && response.console_logs.length > 0 && (
                       <div
                         style={{
-                          borderTop: '1px solid var(--border-color)',
+                          borderTop: '1px solid var(--border-light)',
                           height: '150px',
                           display: 'flex',
                           flexDirection: 'column'
@@ -565,7 +602,7 @@ export const RequestEditor: React.FC<RequestEditorProps> = ({ requestId }) => {
                     )}
                   </div>
                 ) : (
-                  <div style={{ padding: '16px', color: 'var(--text-muted)' }}>Hit Send to get a response</div>
+                  <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', textAlign: 'center', verticalAlign: 'center', padding: '16px', color: 'var(--text-muted)' }}>Hit Send to get a response</div>
                 )}
               </div>
             </>

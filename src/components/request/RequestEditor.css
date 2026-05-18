@@ -15,7 +15,6 @@
   border-radius: 6px;
   align-items: center;
   transition: border-color 0.2s;
-  overflow: hidden;
 }
 
 .url-bar-group:focus-within {
