@@ -38,7 +38,6 @@
 .tab.active {
   background-color: hsl(var(--bg-surface));
   color: hsl(var(--text-main));
-  border-top-color: hsl(var(--primary));
 }
 
 .tab-title {

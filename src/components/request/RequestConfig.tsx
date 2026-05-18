@@ -1,5 +1,5 @@
 import React from 'react';
-import { Play } from 'lucide-react';
+import { Columns, Rows, ChevronDown } from 'lucide-react';
 import { ApiRequest } from '../../types/request';
 import './RequestEditor.css';
 
@@ -11,6 +11,8 @@ interface RequestConfigProps {
   wsStatus?: 'disconnected' | 'connecting' | 'connected';
   onWsConnect?: () => void;
   onWsDisconnect?: () => void;
+  layoutMode: 'stacked' | 'side-by-side';
+  onToggleLayout: () => void;
 }
 
 const METHODS = ['GET', 'POST', 'PUT', 'DELETE', 'PATCH', 'OPTIONS', 'HEAD', 'WS'];
@@ -22,78 +24,71 @@ export const RequestConfig: React.FC<RequestConfigProps> = ({
   isLoading,
   wsStatus,
   onWsConnect,
-  onWsDisconnect
+  onWsDisconnect,
+  layoutMode,
+  onToggleLayout
 }) => {
   return (
     <div className="request-config">
-      <select
-        className="protocol-select"
-        value={request.protocol || 'REST'}
-        onChange={e => {
-          const protocol = e.target.value;
-          const method = protocol === 'GraphQL' ? 'POST' : request.method;
-          onChange({ ...request, protocol, method });
-        }}
-        style={{
-          padding: '8px',
-          border: 'none',
-          background: 'var(--bg-secondary)',
-          color: 'var(--text-primary)',
-          outline: 'none',
-          cursor: 'pointer',
-          fontWeight: 600
-        }}
-      >
-        <option value="REST">REST</option>
-        <option value="GraphQL">GraphQL</option>
-        <option value="gRPC">gRPC</option>
-        <option value="WebSocket">WebSocket</option>
-      </select>
-      <select
-        className={`method-select method-${request.method.toLowerCase()}`}
-        value={request.protocol === 'WebSocket' ? 'WS' : request.method}
-        onChange={e => onChange({ ...request, method: e.target.value })}
-        disabled={request.protocol === 'GraphQL' || request.protocol === 'gRPC' || request.protocol === 'WebSocket'}
-      >
-        {METHODS.map(m => (
-          <option key={m} value={m}>
-            {m}
-          </option>
-        ))}
-      </select>
+      <div className="url-bar-group">
 
-      <input
-        type="text"
-        className="url-input"
-        placeholder="Enter request URL"
-        value={request.url}
-        onChange={e => onChange({ ...request, url: e.target.value })}
-        onKeyDown={e => {
-          if (e.key === 'Enter') onSend();
-        }}
-      />
+        <div className="method-select-wrapper" style={{ position: 'relative', display: 'flex', alignItems: 'center' }}>
+          <select
+            className={`method-select method-${request.method.toLowerCase()}`}
+            value={request.protocol === 'WebSocket' ? 'WS' : request.method}
+            onChange={e => onChange({ ...request, method: e.target.value })}
+            disabled={request.protocol === 'GraphQL' || request.protocol === 'gRPC' || request.protocol === 'WebSocket'}
+            style={{ paddingRight: '24px' }}
+          >
+            {METHODS.map(m => (
+              <option key={m} value={m}>
+                {m}
+              </option>
+            ))}
+          </select>
+          <ChevronDown size={14} style={{ position: 'absolute', right: '8px', pointerEvents: 'none', color: 'hsl(var(--text-muted))' }} />
+        </div>
 
-      {request.protocol === 'WebSocket' ? (
-        <button
-          className="send-btn"
-          onClick={wsStatus === 'connected' ? onWsDisconnect : onWsConnect}
-          style={{
-            backgroundColor: wsStatus === 'connected' ? 'var(--color-danger)' : 'var(--color-primary)'
+        <div className="vertical-divider" />
+
+        <input
+          type="text"
+          className="url-input"
+          placeholder="Enter request URL"
+          value={request.url}
+          onChange={e => onChange({ ...request, url: e.target.value })}
+          onKeyDown={e => {
+            if (e.key === 'Enter') onSend();
           }}
-        >
-          {wsStatus === 'connecting' ? 'Connecting...' : wsStatus === 'connected' ? 'Disconnect' : 'Connect'}
+        />
+      </div>
+
+      <div className="send-btn-group">
+        {request.protocol === 'WebSocket' ? (
+          <button
+            className="send-btn main-send"
+            onClick={wsStatus === 'connected' ? onWsDisconnect : onWsConnect}
+            style={{ backgroundColor: wsStatus === 'connected' ? 'hsl(var(--method-delete))' : 'hsl(var(--primary))' }}
+          >
+            {wsStatus === 'connecting' ? 'Connecting...' : wsStatus === 'connected' ? 'Disconnect' : 'Connect'}
+          </button>
+        ) : (
+          <button className="send-btn main-send" onClick={onSend} disabled={isLoading}>
+            {isLoading ? 'Sending...' : 'Send'}
+          </button>
+        )}
+        <button className="send-btn dropdown-send" disabled={isLoading}>
+          <ChevronDown size={14} />
         </button>
-      ) : (
-        <button className="send-btn" onClick={onSend} disabled={isLoading}>
-          {isLoading ? (
-            'Sending...'
-          ) : (
-            <>
-              <Play size={14} fill="currentColor" /> Send
-            </>
-          )}
-        </button>
-      )}
+      </div>
+
+      <button
+        className="layout-toggle-btn"
+        onClick={onToggleLayout}
+        title={layoutMode === 'stacked' ? 'Switch to Side-by-Side' : 'Switch to Stacked'}
+      >
+        {layoutMode === 'stacked' ? <Columns size={16} /> : <Rows size={16} />}
+      </button>
     </div>
   );
 };

@@ -18,8 +18,8 @@ export const requestService = {
     return invoke('delete_request', { id });
   },
 
-  executeRequest: async (id: string, environmentId?: string | null): Promise<ApiResponse> => {
-    return invoke('execute_request', { id, environmentId });
+  executeRequest: async (request: ApiRequest, environmentId?: string | null): Promise<ApiResponse> => {
+    return invoke('execute_request', { request, environmentId });
   },
 
   duplicateRequest: async (id: string): Promise<ApiRequest> => {

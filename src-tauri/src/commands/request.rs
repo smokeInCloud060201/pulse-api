@@ -95,10 +95,9 @@ pub fn delete_request(state: State<'_, DbState>, id: String) -> Result<(), Strin
 }
 
 #[tauri::command]
-pub async fn execute_request(state: State<'_, DbState>, id: String, environment_id: Option<String>) -> Result<ApiResponse, String> {
-    let (request, env) = {
+pub async fn execute_request(state: State<'_, DbState>, request: ApiRequest, environment_id: Option<String>) -> Result<ApiResponse, String> {
+    let env = {
         let db = state.db.lock().map_err(|e| e.to_string())?;
-        let req = get_request_internal(&db, &id).ok_or_else(|| "Request not found".to_string())?;
         
         let mut environment = None;
         if let Some(env_id) = environment_id {
@@ -136,7 +135,7 @@ pub async fn execute_request(state: State<'_, DbState>, id: String, environment_
                 }
             }
         }
-        (req, environment)
+        environment
     };
 
     let (response, updated_env) = execute_request_internal(request.clone(), env).await?;

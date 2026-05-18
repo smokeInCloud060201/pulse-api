@@ -39,6 +39,7 @@ export const TabBar: React.FC = () => {
             key={tab.id}
             className={`tab ${activeTabId === tab.id ? 'active' : ''}`}
             onClick={() => setActiveTab(tab.id)}
+            style={activeTabId === tab.id ? { borderTopColor: `hsl(${getMethodColor(tab.request.method)})` } : {}}
           >
             <span className="method" style={{ color: `hsl(${getMethodColor(tab.request.method)})` }}>
               {tab.request.method}
@@ -58,13 +59,6 @@ export const TabBar: React.FC = () => {
             </button>
           </div>
         ))}
-      </div>
-      <div className="env-selector">
-        <select className="env-select">
-          <option>No Environment</option>
-          <option>Development</option>
-          <option>Production</option>
-        </select>
       </div>
     </div>
   );

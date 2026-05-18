@@ -97,7 +97,8 @@ export const ImportModal: React.FC<ImportModalProps> = ({ onClose }) => {
         left: 0,
         right: 0,
         bottom: 0,
-        backgroundColor: 'rgba(0,0,0,0.6)',
+        backgroundColor: 'rgba(0,0,0,0.4)',
+        backdropFilter: 'blur(2px)',
         display: 'flex',
         justifyContent: 'center',
         alignItems: 'center',
@@ -108,13 +109,15 @@ export const ImportModal: React.FC<ImportModalProps> = ({ onClose }) => {
         className="modal-content"
         onClick={e => e.stopPropagation()}
         style={{
-          backgroundColor: 'var(--bg-panel)',
-          padding: '24px',
+          backgroundColor: 'hsl(var(--bg-panel))',
           borderRadius: '8px',
-          width: '500px',
+          width: '560px',
           maxWidth: '90vw',
-          boxShadow: '0 10px 25px rgba(0,0,0,0.5)',
-          border: '1px solid var(--border-color)'
+          boxShadow: '0 20px 40px rgba(0,0,0,0.15)',
+          border: '1px solid hsl(var(--border-light))',
+          display: 'flex',
+          flexDirection: 'column',
+          overflow: 'hidden'
         }}
       >
         <div
@@ -122,101 +125,143 @@ export const ImportModal: React.FC<ImportModalProps> = ({ onClose }) => {
             display: 'flex',
             justifyContent: 'space-between',
             alignItems: 'center',
-            marginBottom: '20px'
+            padding: '16px 24px',
+            borderBottom: '1px solid hsl(var(--border-light))'
           }}
         >
-          <h2 style={{ margin: 0, fontSize: '1.2rem' }}>Import Data</h2>
-          <button className="icon-btn" onClick={onClose}>
-            <X size={20} />
+          <h2 style={{ margin: 0, fontSize: '1rem', fontWeight: 600, color: 'hsl(var(--text-main))' }}>Import</h2>
+          <button
+            style={{
+              background: 'transparent',
+              border: 'none',
+              color: 'hsl(var(--text-muted))',
+              cursor: 'pointer',
+              padding: 4
+            }}
+            onClick={onClose}
+          >
+            <X size={18} />
           </button>
         </div>
 
         <div
-          className="tabs"
           style={{
             display: 'flex',
-            borderBottom: '1px solid var(--border-color)',
-            marginBottom: '20px'
+            padding: '0 16px',
+            borderBottom: '1px solid hsl(var(--border-light))',
+            backgroundColor: 'hsl(var(--bg-base))'
           }}
         >
           <div
-            className={`tab ${activeTab === 'collection' ? 'active' : ''}`}
             onClick={() => {
               setActiveTab('collection');
               setStatus({ type: 'idle', message: '' });
             }}
             style={{
-              padding: '8px 16px',
+              padding: '12px 16px',
               cursor: 'pointer',
-              borderBottom: activeTab === 'collection' ? '2px solid var(--color-primary)' : 'none',
-              color: activeTab === 'collection' ? 'var(--color-primary)' : 'inherit'
+              fontSize: '0.85rem',
+              fontWeight: 500,
+              borderBottom: activeTab === 'collection' ? '2px solid hsl(var(--primary))' : '2px solid transparent',
+              color: activeTab === 'collection' ? 'hsl(var(--text-main))' : 'hsl(var(--text-muted))'
             }}
           >
             Postman Collection
           </div>
           <div
-            className={`tab ${activeTab === 'environment' ? 'active' : ''}`}
             onClick={() => {
               setActiveTab('environment');
               setStatus({ type: 'idle', message: '' });
             }}
             style={{
-              padding: '8px 16px',
+              padding: '12px 16px',
               cursor: 'pointer',
-              borderBottom: activeTab === 'environment' ? '2px solid var(--color-primary)' : 'none',
-              color: activeTab === 'environment' ? 'var(--color-primary)' : 'inherit'
+              fontSize: '0.85rem',
+              fontWeight: 500,
+              borderBottom: activeTab === 'environment' ? '2px solid hsl(var(--primary))' : '2px solid transparent',
+              color: activeTab === 'environment' ? 'hsl(var(--text-main))' : 'hsl(var(--text-muted))'
             }}
           >
             Postman Environment
           </div>
         </div>
 
-        <div
-          style={{
-            display: 'flex',
-            flexDirection: 'column',
-            alignItems: 'center',
-            padding: '30px 20px',
-            border: '2px dashed var(--border-color)',
-            borderRadius: '8px',
-            backgroundColor: 'rgba(0,0,0,0.2)'
-          }}
-        >
-          <UploadCloud size={48} style={{ color: 'var(--text-muted)', marginBottom: '16px' }} />
-          <p style={{ margin: '0 0 16px 0', textAlign: 'center', color: 'var(--text-muted)' }}>
-            {activeTab === 'collection'
-              ? 'Select a Postman Collection v2.1 JSON file'
-              : 'Select a Postman Environment JSON file'}
-          </p>
-          <input
-            type="file"
-            accept=".json"
-            ref={fileInputRef}
-            style={{ display: 'none' }}
-            onChange={handleFileSelect}
-          />
-          <button className="btn btn-primary" onClick={() => fileInputRef.current?.click()}>
-            Choose File
-          </button>
-        </div>
-
-        {status.type !== 'idle' && (
+        <div style={{ padding: '24px' }}>
           <div
             style={{
-              marginTop: '20px',
-              padding: '12px',
-              borderRadius: '4px',
               display: 'flex',
+              flexDirection: 'column',
               alignItems: 'center',
-              gap: '8px',
-              backgroundColor: status.type === 'success' ? 'rgba(40, 167, 69, 0.1)' : 'rgba(220, 53, 69, 0.1)',
-              color: status.type === 'success' ? 'var(--color-success)' : 'var(--color-danger)'
+              padding: '40px 20px',
+              border: '1px dashed hsl(var(--border-light))',
+              borderRadius: '6px',
+              backgroundColor: 'hsl(var(--bg-surface))',
+              cursor: 'pointer'
+            }}
+            onClick={() => fileInputRef.current?.click()}
+          >
+            <UploadCloud size={32} style={{ color: 'hsl(var(--primary))', marginBottom: '16px' }} />
+            <p style={{ margin: '0 0 4px 0', fontSize: '0.95rem', fontWeight: 500, color: 'hsl(var(--text-main))' }}>
+              Upload {activeTab === 'collection' ? 'Collection' : 'Environment'} File
+            </p>
+            <p style={{ margin: 0, fontSize: '0.8rem', color: 'hsl(var(--text-muted))' }}>
+              Drag and drop your JSON file here, or click to browse
+            </p>
+            <input
+              type="file"
+              accept=".json"
+              ref={fileInputRef}
+              style={{ display: 'none' }}
+              onChange={handleFileSelect}
+            />
+          </div>
+
+          {status.type !== 'idle' && (
+            <div
+              style={{
+                marginTop: '16px',
+                padding: '12px 16px',
+                borderRadius: '6px',
+                display: 'flex',
+                alignItems: 'center',
+                gap: '8px',
+                backgroundColor:
+                  status.type === 'success' ? 'hsla(var(--color-success), 0.1)' : 'hsla(var(--color-danger), 0.1)',
+                color: status.type === 'success' ? 'hsl(var(--color-success))' : 'hsl(var(--color-danger))',
+                border: `1px solid ${status.type === 'success' ? 'hsl(var(--color-success))' : 'hsl(var(--color-danger))'}`
+              }}
+            >
+              {status.type === 'success' ? <CheckCircle size={16} /> : <AlertCircle size={16} />}
+              <span style={{ fontSize: '0.85rem' }}>{status.message}</span>
+            </div>
+          )}
+        </div>
+
+        <div
+          style={{
+            padding: '12px 24px',
+            backgroundColor: 'hsl(var(--bg-base))',
+            borderTop: '1px solid hsl(var(--border-light))',
+            display: 'flex',
+            justifyContent: 'flex-end'
+          }}
+        >
+          <button
+            onClick={onClose}
+            style={{
+              padding: '6px 16px',
+              background: 'hsl(var(--bg-surface))',
+              border: '1px solid hsl(var(--border-light))',
+              borderRadius: '4px',
+              color: 'hsl(var(--text-main))',
+              cursor: 'pointer',
+              fontSize: '0.85rem',
+              fontWeight: 500
             }}
           >
-            {status.type === 'success' ? <CheckCircle size={18} /> : <AlertCircle size={18} />}
-            <span style={{ fontSize: '0.9rem' }}>{status.message}</span>
-          </div>
-        )}
+            Cancel
+          </button>
+        </div>
       </div>
     </div>
   );

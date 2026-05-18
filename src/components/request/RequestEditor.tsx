@@ -12,6 +12,7 @@ import { GraphQLEditor } from './GraphQLEditor';
 import { GrpcEditor } from './GrpcEditor';
 import { WebSocketBody, WebSocketResponse, WsMessage } from './WebSocketEditor';
 import { AuthEditor } from './AuthEditor';
+import { EnvSelector } from '../layout/EnvSelector';
 import Editor from '@monaco-editor/react';
 import './RequestEditor.css';
 
@@ -34,6 +35,15 @@ export const RequestEditor: React.FC<RequestEditorProps> = ({ requestId }) => {
   const [wsStatus, setWsStatus] = useState<'disconnected' | 'connecting' | 'connected'>('disconnected');
   const [wsConnectionId, setWsConnectionId] = useState<string | null>(null);
   const [wsMessages, setWsMessages] = useState<WsMessage[]>([]);
+  const [layoutMode, setLayoutMode] = useState<'stacked' | 'side-by-side'>(() => {
+    return (localStorage.getItem('pulse_layout') as 'stacked' | 'side-by-side') || 'stacked';
+  });
+
+  const toggleLayout = () => {
+    const newLayout = layoutMode === 'stacked' ? 'side-by-side' : 'stacked';
+    setLayoutMode(newLayout);
+    localStorage.setItem('pulse_layout', newLayout);
+  };
 
   // Parse headers and params safely
   const safeParseKV = (jsonStr: string) => {
@@ -58,8 +68,10 @@ export const RequestEditor: React.FC<RequestEditorProps> = ({ requestId }) => {
     if (!request) return;
     setIsLoading(true);
     try {
-      await saveRequest();
-      const res = await requestService.executeRequest(request.id, activeEnvironmentId);
+      if (request.collection_id) {
+        await saveRequest().catch(e => console.warn('Failed to save request before sending:', e));
+      }
+      const res = await requestService.executeRequest(request, activeEnvironmentId);
       setResponse(res);
     } catch (e) {
       console.error(e);
@@ -208,7 +220,45 @@ export const RequestEditor: React.FC<RequestEditorProps> = ({ requestId }) => {
   };
 
   return (
-    <div style={{ display: 'flex', flexDirection: 'column', height: '100%' }}>
+    <div style={{ display: 'flex', flexDirection: 'column', height: '100%', backgroundColor: 'hsl(var(--bg-panel))' }}>
+      {/* Breadcrumbs Row */}
+      <div
+        style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', padding: '12px 16px 0 16px' }}
+      >
+        <div
+          style={{
+            fontSize: '0.85rem',
+            color: 'hsl(var(--text-muted))',
+            display: 'flex',
+            alignItems: 'center',
+            gap: 6
+          }}
+        >
+          <span>REST API basics: CRUD, test & variable</span>
+          <span>/</span>
+          <span style={{ color: 'hsl(var(--text-main))', fontWeight: 500 }}>{request.name || 'Untitled Request'}</span>
+        </div>
+        <div style={{ display: 'flex', gap: 12, alignItems: 'center' }}>
+          <EnvSelector />
+          <button
+            style={{
+              display: 'flex',
+              alignItems: 'center',
+              gap: 4,
+              background: 'transparent',
+              border: '1px solid hsl(var(--border-light))',
+              padding: '4px 12px',
+              borderRadius: 4,
+              fontSize: '0.8rem',
+              cursor: 'pointer',
+              color: 'hsl(var(--text-main))'
+            }}
+          >
+            Save
+          </button>
+        </div>
+      </div>
+
       <RequestConfig
         request={request}
         onChange={handleRequestChange}
@@ -217,16 +267,27 @@ export const RequestEditor: React.FC<RequestEditorProps> = ({ requestId }) => {
         wsStatus={wsStatus}
         onWsConnect={handleWsConnect}
         onWsDisconnect={handleWsDisconnect}
+        layoutMode={layoutMode}
+        onToggleLayout={toggleLayout}
       />
 
-      <div style={{ display: 'flex', flex: 1, overflow: 'hidden' }}>
+      <div
+        style={{
+          display: 'flex',
+          flexDirection: layoutMode === 'stacked' ? 'column' : 'row',
+          flex: 1,
+          overflow: 'hidden'
+        }}
+      >
         {/* Top/Left pane: Request Details */}
         <div
           style={{
             flex: 1,
             display: 'flex',
             flexDirection: 'column',
-            borderRight: '1px solid var(--border-color)'
+            borderRight: layoutMode === 'side-by-side' ? '1px solid var(--border-light)' : 'none',
+            borderBottom: layoutMode === 'stacked' ? '1px solid var(--border-light)' : 'none',
+            overflow: 'hidden'
           }}
         >
           <div className="request-editor-tabs">
