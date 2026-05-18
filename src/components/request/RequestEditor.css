@@ -18,11 +18,21 @@
   width: 100px;
 }
 
-.method-get { color: var(--color-success); }
-.method-post { color: var(--color-warning); }
-.method-put { color: var(--color-info); }
-.method-delete { color: var(--color-danger); }
-.method-patch { color: var(--color-warning); }
+.method-get {
+  color: var(--color-success);
+}
+.method-post {
+  color: var(--color-warning);
+}
+.method-put {
+  color: var(--color-info);
+}
+.method-delete {
+  color: var(--color-danger);
+}
+.method-patch {
+  color: var(--color-warning);
+}
 
 .url-input {
   flex: 1;
@@ -85,10 +95,24 @@
   align-items: center;
 }
 
-.kv-col-check { width: 40px; display: flex; justify-content: center; }
-.kv-col-key { flex: 1; padding: 0 8px; }
-.kv-col-value { flex: 1; padding: 0 8px; }
-.kv-col-action { width: 40px; display: flex; justify-content: center; }
+.kv-col-check {
+  width: 40px;
+  display: flex;
+  justify-content: center;
+}
+.kv-col-key {
+  flex: 1;
+  padding: 0 8px;
+}
+.kv-col-value {
+  flex: 1;
+  padding: 0 8px;
+}
+.kv-col-action {
+  width: 40px;
+  display: flex;
+  justify-content: center;
+}
 
 .kv-input {
   width: 100%;
@@ -102,7 +126,8 @@
   outline: none;
 }
 
-.kv-input:focus, .kv-input:hover {
+.kv-input:focus,
+.kv-input:hover {
   border-color: var(--border-color);
   background: var(--bg-tertiary);
 }

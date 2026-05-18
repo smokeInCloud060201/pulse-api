@@ -4,7 +4,7 @@ import { requestService } from '../services/requestService';
 
 interface RequestState {
   requests: Record<string, ApiRequest[]>; // Keyed by collection_id
-  
+
   loadRequests: (collectionId: string) => Promise<void>;
   createRequest: (collectionId: string, folderId: string | null, name: string) => Promise<ApiRequest>;
   updateRequest: (request: ApiRequest) => Promise<void>;
@@ -16,7 +16,7 @@ export const useRequestStore = create<RequestState>((set, get) => ({
 
   loadRequests: async (collectionId: string) => {
     const reqs = await requestService.getRequests(collectionId);
-    set((state) => ({
+    set(state => ({
       requests: {
         ...state.requests,
         [collectionId]: reqs

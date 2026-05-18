@@ -4,11 +4,11 @@
   --bg-surface: 224 71% 8%;
   --bg-panel: 224 71% 12%;
   --bg-hover: 224 71% 18%;
-  
+
   --primary: 262 83% 58%;
   --primary-hover: 262 83% 68%;
   --accent: 316 73% 52%;
-  
+
   --text-main: 210 40% 98%;
   --text-muted: 215 20% 65%;
   --text-placeholder: 215 20% 45%;
@@ -80,7 +80,7 @@ body {
   border-top-left-radius: 12px;
   border-left: 1px solid hsl(var(--border-light));
   border-top: 1px solid hsl(var(--border-light));
-  box-shadow: -4px -4px 24px rgba(0,0,0,0.2);
+  box-shadow: -4px -4px 24px rgba(0, 0, 0, 0.2);
   margin-top: 8px;
   overflow: hidden;
 }

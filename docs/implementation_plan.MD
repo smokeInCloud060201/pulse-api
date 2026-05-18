@@ -480,9 +480,9 @@ flowchart LR
 | Postman collection v2.1 import | Parse and map to internal models |
 | Postman environment import | Parse and create environments |
 | Import UI | File picker, preview, conflict resolution |
-| Collection export (native format) | Export as JSON for backup/sharing |
+| Collection export (native format) | Export as JSON for backup/sharing - **[COMPLETED]** |
 
-**Deliverable**: All 4 protocols working + Postman import.
+**Deliverable**: All 4 protocols working + Postman import. - **[COMPLETED]**
 
 ---
 

@@ -61,7 +61,8 @@
   border-radius: 4px;
 }
 
-.tab:hover .tab-close, .tab.active .tab-close {
+.tab:hover .tab-close,
+.tab.active .tab-close {
   color: hsl(var(--text-muted));
 }
 

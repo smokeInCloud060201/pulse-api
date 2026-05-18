@@ -5,7 +5,7 @@ export const EnvironmentService = {
   getEnvironments: async (): Promise<Environment[]> => {
     return invoke('get_environments');
   },
-  
+
   createEnvironment: async (id: string, name: string): Promise<Environment> => {
     return invoke('create_environment', { id, name });
   },

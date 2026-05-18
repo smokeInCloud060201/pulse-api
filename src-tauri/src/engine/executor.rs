@@ -7,7 +7,7 @@ use crate::engine::variable_resolver::resolve_variables;
 use crate::engine::script_runner::run_script;
 
 pub async fn execute_request_internal(
-    mut req: ApiRequest,
+    req: ApiRequest,
     mut env: Option<Environment>
 ) -> Result<(ApiResponse, Option<Environment>), String> {
     let mut console_logs = Vec::new();

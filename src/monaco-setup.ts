@@ -10,7 +10,7 @@ self.MonacoEnvironment = {
       return new graphqlWorker();
     }
     return new editorWorker();
-  },
+  }
 };
 
 // Use the local monaco-editor instead of loading from CDN

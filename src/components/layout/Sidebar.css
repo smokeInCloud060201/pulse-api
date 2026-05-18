@@ -48,7 +48,8 @@
   transition: all 0.2s;
 }
 
-.collection-item:hover .icon-btn-small, .request-item:hover .icon-btn-small {
+.collection-item:hover .icon-btn-small,
+.request-item:hover .icon-btn-small {
   color: hsl(var(--text-muted));
 }
 
@@ -68,7 +69,8 @@
   padding: 8px 0;
 }
 
-.collection-item, .request-item {
+.collection-item,
+.request-item {
   padding: 6px 16px;
   display: flex;
   align-items: center;
@@ -83,7 +85,8 @@
   padding-left: 32px;
 }
 
-.collection-item:hover, .request-item:hover {
+.collection-item:hover,
+.request-item:hover {
   background: hsl(var(--bg-hover));
   color: hsl(var(--text-main));
 }
@@ -104,11 +107,21 @@
   width: 36px;
 }
 
-.method-get { color: hsl(var(--method-get)); }
-.method-post { color: hsl(var(--method-post)); }
-.method-put { color: hsl(var(--method-put)); }
-.method-delete { color: hsl(var(--method-delete)); }
-.method-patch { color: hsl(var(--method-patch)); }
+.method-get {
+  color: hsl(var(--method-get));
+}
+.method-post {
+  color: hsl(var(--method-post));
+}
+.method-put {
+  color: hsl(var(--method-put));
+}
+.method-delete {
+  color: hsl(var(--method-delete));
+}
+.method-patch {
+  color: hsl(var(--method-patch));
+}
 
 .sidebar-footer {
   padding: 12px 16px;

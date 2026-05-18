@@ -1,11 +1,11 @@
-import { useEffect } from "react";
-import "./monaco-setup";
-import { Sidebar } from "./components/layout/Sidebar";
-import { TabBar } from "./components/layout/TabBar";
-import { RequestEditor } from "./components/request/RequestEditor";
-import { useTabStore } from "./stores/tabStore";
-import { EnvSelector } from "./components/layout/EnvSelector";
-import "./styles/theme.css";
+import { useEffect } from 'react';
+import './monaco-setup';
+import { Sidebar } from './components/layout/Sidebar';
+import { TabBar } from './components/layout/TabBar';
+import { RequestEditor } from './components/request/RequestEditor';
+import { useTabStore } from './stores/tabStore';
+import { EnvSelector } from './components/layout/EnvSelector';
+import './styles/theme.css';
 
 function App() {
   const { init, isInitialized, activeTabId, tabs } = useTabStore();
@@ -19,19 +19,27 @@ function App() {
       <div className="main-content">
         <Sidebar />
         <div className="content-area">
-          <div style={{ display: 'flex', alignItems: 'center', borderBottom: '1px solid var(--border-color)' }}>
-            <div style={{ flex: 1 }}><TabBar /></div>
+          <div
+            style={{
+              display: 'flex',
+              alignItems: 'center',
+              borderBottom: '1px solid var(--border-color)'
+            }}
+          >
+            <div style={{ flex: 1 }}>
+              <TabBar />
+            </div>
             <EnvSelector />
           </div>
           {!isInitialized ? (
-            <div style={{ padding: "24px", flex: 1 }}>Loading...</div>
+            <div style={{ padding: '24px', flex: 1 }}>Loading...</div>
           ) : tabs.length === 0 ? (
-            <div style={{ padding: "24px", flex: 1 }}>
-              <h2 style={{ marginBottom: "16px" }}>Pulse API Workspace</h2>
-              <p style={{ color: "hsl(var(--text-muted))" }}>Select a request from the sidebar or create a new one.</p>
+            <div style={{ padding: '24px', flex: 1 }}>
+              <h2 style={{ marginBottom: '16px' }}>Pulse API Workspace</h2>
+              <p style={{ color: 'hsl(var(--text-muted))' }}>Select a request from the sidebar or create a new one.</p>
             </div>
           ) : activeTabId ? (
-            <div style={{ flex: 1, display: "flex", flexDirection: "column", overflow: "hidden" }}>
+            <div style={{ flex: 1, display: 'flex', flexDirection: 'column', overflow: 'hidden' }}>
               <RequestEditor requestId={activeTabId} />
             </div>
           ) : null}

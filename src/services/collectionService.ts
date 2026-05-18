@@ -24,5 +24,9 @@ export const collectionService = {
 
   deleteFolder: async (id: string): Promise<void> => {
     return invoke('delete_folder', { id });
+  },
+
+  importCollectionData: async (collection: Collection, folders: Folder[], requests: any[]): Promise<void> => {
+    return invoke('import_collection_data', { collection, folders, requests });
   }
 };

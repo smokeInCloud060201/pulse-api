@@ -7,7 +7,7 @@ interface EnvironmentState {
   activeEnvironmentId: string | null;
   loading: boolean;
   error: string | null;
-  
+
   fetchEnvironments: () => Promise<void>;
   setActiveEnvironment: (id: string | null) => void;
   createEnvironment: (id: string, name: string) => Promise<Environment>;
@@ -15,7 +15,7 @@ interface EnvironmentState {
   deleteEnvironment: (id: string) => Promise<void>;
 }
 
-export const useEnvironmentStore = create<EnvironmentState>((set) => ({
+export const useEnvironmentStore = create<EnvironmentState>(set => ({
   environments: [],
   activeEnvironmentId: null,
   loading: false,
@@ -36,35 +36,23 @@ export const useEnvironmentStore = create<EnvironmentState>((set) => ({
   },
 
   createEnvironment: async (id: string, name: string) => {
-    try {
-      const newEnv = await EnvironmentService.createEnvironment(id, name);
-      set(state => ({ environments: [...state.environments, newEnv] }));
-      return newEnv;
-    } catch (err: any) {
-      throw err;
-    }
+    const newEnv = await EnvironmentService.createEnvironment(id, name);
+    set(state => ({ environments: [...state.environments, newEnv] }));
+    return newEnv;
   },
 
   updateEnvironment: async (id: string, name: string, variables: EnvVariable[]) => {
-    try {
-      await EnvironmentService.updateEnvironment(id, name, variables);
-      set(state => ({
-        environments: state.environments.map(e => e.id === id ? { ...e, name, variables } : e)
-      }));
-    } catch (err: any) {
-      throw err;
-    }
+    await EnvironmentService.updateEnvironment(id, name, variables);
+    set(state => ({
+      environments: state.environments.map(e => (e.id === id ? { ...e, name, variables } : e))
+    }));
   },
 
   deleteEnvironment: async (id: string) => {
-    try {
-      await EnvironmentService.deleteEnvironment(id);
-      set(state => ({
-        environments: state.environments.filter(e => e.id !== id),
-        activeEnvironmentId: state.activeEnvironmentId === id ? null : state.activeEnvironmentId
-      }));
-    } catch (err: any) {
-      throw err;
-    }
+    await EnvironmentService.deleteEnvironment(id);
+    set(state => ({
+      environments: state.environments.filter(e => e.id !== id),
+      activeEnvironmentId: state.activeEnvironmentId === id ? null : state.activeEnvironmentId
+    }));
   }
 }));

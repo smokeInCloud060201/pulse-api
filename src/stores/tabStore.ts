@@ -33,14 +33,14 @@ export const useTabStore = create<TabState>((set, get) => ({
       tauriStore = await load('tabs-state.json');
       const savedTabs = (await tauriStore.get('tabs')) as Tab[] | null;
       const savedActiveTab = (await tauriStore.get('activeTabId')) as string | null;
-      
-      set({ 
-        tabs: savedTabs || [], 
+
+      set({
+        tabs: savedTabs || [],
         activeTabId: savedActiveTab || null,
         isInitialized: true
       });
     } catch (e) {
-      console.error("Failed to load tab state", e);
+      console.error('Failed to load tab state', e);
       set({ isInitialized: true });
     }
   },
@@ -56,7 +56,7 @@ export const useTabStore = create<TabState>((set, get) => ({
   openTab: (request: ApiRequest) => {
     const { tabs } = get();
     const existing = tabs.find(t => t.id === request.id);
-    
+
     if (existing) {
       set({ activeTabId: request.id });
     } else {
@@ -68,7 +68,7 @@ export const useTabStore = create<TabState>((set, get) => ({
   closeTab: (id: string) => {
     const { tabs, activeTabId } = get();
     const newTabs = tabs.filter(t => t.id !== id);
-    
+
     let newActiveId = activeTabId;
     if (activeTabId === id) {
       // Pick the next or previous tab
@@ -78,7 +78,7 @@ export const useTabStore = create<TabState>((set, get) => ({
         newActiveId = null;
       }
     }
-    
+
     set({ tabs: newTabs, activeTabId: newActiveId });
     get().saveState();
   },
@@ -91,7 +91,7 @@ export const useTabStore = create<TabState>((set, get) => ({
   updateTabRequest: (request: ApiRequest) => {
     const { tabs } = get();
     set({
-      tabs: tabs.map(t => t.id === request.id ? { ...t, request, isDirty: true } : t)
+      tabs: tabs.map(t => (t.id === request.id ? { ...t, request, isDirty: true } : t))
     });
     get().saveState();
   }

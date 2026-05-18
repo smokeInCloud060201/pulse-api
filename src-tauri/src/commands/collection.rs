@@ -2,6 +2,7 @@ use tauri::State;
 use uuid::Uuid;
 use crate::db::DbState;
 use crate::models::collection::{Collection, Folder};
+use crate::models::request::ApiRequest;
 use rusqlite::OptionalExtension;
 
 #[tauri::command]
@@ -123,4 +124,45 @@ fn get_folder_internal(db: &rusqlite::Connection, id: &str) -> Option<Folder> {
             })
         },
     ).optional().unwrap_or(None)
+}
+
+#[tauri::command]
+pub fn import_collection_data(
+    state: State<'_, DbState>,
+    collection: Collection,
+    folders: Vec<Folder>,
+    requests: Vec<ApiRequest>,
+) -> Result<(), String> {
+    let mut db = state.db.lock().map_err(|e| e.to_string())?;
+    let tx = db.transaction().map_err(|e| e.to_string())?;
+    
+    // insert collection
+    tx.execute(
+        "INSERT INTO collections (id, name, description) VALUES (?1, ?2, ?3)",
+        (&collection.id, &collection.name, &collection.description),
+    ).map_err(|e| e.to_string())?;
+    
+    // insert folders
+    let mut f_stmt = tx.prepare(
+        "INSERT INTO folders (id, collection_id, parent_folder_id, name, sort_order) VALUES (?1, ?2, ?3, ?4, ?5)"
+    ).map_err(|e| e.to_string())?;
+    for f in folders {
+        f_stmt.execute(rusqlite::params![f.id, f.collection_id, f.parent_folder_id, f.name, f.sort_order])
+            .map_err(|e| e.to_string())?;
+    }
+    drop(f_stmt);
+    
+    // insert requests
+    let mut r_stmt = tx.prepare(
+        "INSERT INTO requests (id, collection_id, folder_id, name, protocol, method, url, headers, query_params, body_type, body_content, pre_script, post_script, sort_order, proto_file, grpc_service, grpc_method) VALUES (?1, ?2, ?3, ?4, ?5, ?6, ?7, ?8, ?9, ?10, ?11, ?12, ?13, ?14, ?15, ?16, ?17)"
+    ).map_err(|e| e.to_string())?;
+    for r in requests {
+        r_stmt.execute(rusqlite::params![
+            r.id, r.collection_id, r.folder_id, r.name, r.protocol, r.method, r.url, r.headers, r.query_params, r.body_type, r.body_content, r.pre_script, r.post_script, r.sort_order, r.proto_file, r.grpc_service, r.grpc_method
+        ]).map_err(|e| e.to_string())?;
+    }
+    drop(r_stmt);
+    
+    tx.commit().map_err(|e| e.to_string())?;
+    Ok(())
 }

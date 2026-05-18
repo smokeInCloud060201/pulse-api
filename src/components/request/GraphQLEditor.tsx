@@ -23,7 +23,7 @@ export const GraphQLEditor: React.FC<GraphQLEditorProps> = ({ request, onChange 
     if (request.body_content) {
       parsedContent = JSON.parse(request.body_content);
     }
-  } catch (e) {
+  } catch {
     // ignore
   }
 
@@ -40,7 +40,7 @@ export const GraphQLEditor: React.FC<GraphQLEditorProps> = ({ request, onChange 
     if (!activeEnvironmentId) return url;
     const env = environments.find(e => e.id === activeEnvironmentId);
     if (!env) return url;
-    
+
     let resolvedUrl = url;
     const variables = env.variables || [];
     for (const v of variables) {
@@ -65,7 +65,7 @@ export const GraphQLEditor: React.FC<GraphQLEditorProps> = ({ request, onChange 
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
-          'Accept': 'application/json'
+          Accept: 'application/json'
         },
         body: JSON.stringify({
           query: getIntrospectionQuery()
@@ -84,7 +84,7 @@ export const GraphQLEditor: React.FC<GraphQLEditorProps> = ({ request, onChange 
       // We successfully got the introspection result
       const schema = buildClientSchema(result.data);
       console.log('Schema fetched successfully');
-      
+
       if ((monaco.languages as any).graphql) {
         (monaco.languages as any).graphql.setSchemaConfig([
           {
@@ -94,12 +94,12 @@ export const GraphQLEditor: React.FC<GraphQLEditorProps> = ({ request, onChange 
           }
         ]);
       }
-      
+
       setSchemaFetched(true);
       setError(null);
-    } catch (err: any) {
-      console.error('Failed to fetch schema:', err);
-      setError(err.message || 'Failed to fetch schema');
+    } catch (err: unknown) {
+      console.error('GraphQL introspection error:', err);
+      setError(err instanceof Error ? err.message : 'Failed to fetch schema');
       setSchemaFetched(false);
     } finally {
       setIsFetching(false);
@@ -108,17 +108,24 @@ export const GraphQLEditor: React.FC<GraphQLEditorProps> = ({ request, onChange 
 
   return (
     <div style={{ display: 'flex', flexDirection: 'column', height: '100%', gap: '8px' }}>
-      <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', padding: '0 8px' }}>
+      <div
+        style={{
+          display: 'flex',
+          alignItems: 'center',
+          justifyContent: 'space-between',
+          padding: '0 8px'
+        }}
+      >
         <div style={{ fontSize: '0.85rem', color: 'var(--text-muted)' }}>GraphQL Query</div>
         <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
           {error && <span style={{ color: 'var(--color-danger)', fontSize: '0.8rem' }}>{error}</span>}
           {schemaFetched && <span style={{ color: 'var(--color-success)', fontSize: '0.8rem' }}>Schema loaded ✓</span>}
-          <button 
+          <button
             onClick={fetchSchema}
             disabled={isFetching}
-            style={{ 
-              background: 'var(--bg-secondary)', 
-              border: '1px solid var(--border-color)', 
+            style={{
+              background: 'var(--bg-secondary)',
+              border: '1px solid var(--border-color)',
               color: 'var(--text-primary)',
               padding: '4px 8px',
               borderRadius: '4px',
@@ -130,10 +137,17 @@ export const GraphQLEditor: React.FC<GraphQLEditorProps> = ({ request, onChange 
           </button>
         </div>
       </div>
-      <div style={{ flex: 2, border: '1px solid var(--border-color)', borderRadius: '4px', overflow: 'hidden' }}>
-        <Editor 
-          height="100%" 
-          language="graphql" 
+      <div
+        style={{
+          flex: 2,
+          border: '1px solid var(--border-color)',
+          borderRadius: '4px',
+          overflow: 'hidden'
+        }}
+      >
+        <Editor
+          height="100%"
+          language="graphql"
           theme="vs-dark"
           path={`${request.id || 'query'}.graphql`}
           value={parsedContent.query}
@@ -141,12 +155,28 @@ export const GraphQLEditor: React.FC<GraphQLEditorProps> = ({ request, onChange 
           options={{ minimap: { enabled: false }, fontSize: 13 }}
         />
       </div>
-      
-      <div style={{ fontSize: '0.85rem', color: 'var(--text-muted)', padding: '0 8px', marginTop: '8px' }}>GraphQL Variables (JSON)</div>
-      <div style={{ flex: 1, border: '1px solid var(--border-color)', borderRadius: '4px', overflow: 'hidden' }}>
-        <Editor 
-          height="100%" 
-          language="json" 
+
+      <div
+        style={{
+          fontSize: '0.85rem',
+          color: 'var(--text-muted)',
+          padding: '0 8px',
+          marginTop: '8px'
+        }}
+      >
+        GraphQL Variables (JSON)
+      </div>
+      <div
+        style={{
+          flex: 1,
+          border: '1px solid var(--border-color)',
+          borderRadius: '4px',
+          overflow: 'hidden'
+        }}
+      >
+        <Editor
+          height="100%"
+          language="json"
           theme="vs-dark"
           value={parsedContent.variables}
           onChange={handleVariablesChange}

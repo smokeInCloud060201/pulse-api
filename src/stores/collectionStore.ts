@@ -6,13 +6,14 @@ interface CollectionState {
   collections: Collection[];
   folders: Record<string, Folder[]>; // Keyed by collection_id
   isLoading: boolean;
-  
+
   loadCollections: () => Promise<void>;
   loadFolders: (collectionId: string) => Promise<void>;
   addCollection: (name: string, description?: string) => Promise<void>;
   deleteCollection: (id: string) => Promise<void>;
   addFolder: (collectionId: string, parentFolderId: string | null, name: string) => Promise<void>;
   deleteFolder: (id: string, collectionId: string) => Promise<void>;
+  importCollectionData: (collection: Collection, folders: Folder[], requests: any[]) => Promise<void>;
 }
 
 export const useCollectionStore = create<CollectionState>((set, get) => ({
@@ -36,7 +37,7 @@ export const useCollectionStore = create<CollectionState>((set, get) => ({
 
   loadFolders: async (collectionId: string) => {
     const folders = await collectionService.getFolders(collectionId);
-    set((state) => ({
+    set(state => ({
       folders: {
         ...state.folders,
         [collectionId]: folders
@@ -62,5 +63,10 @@ export const useCollectionStore = create<CollectionState>((set, get) => ({
   deleteFolder: async (id: string, collectionId: string) => {
     await collectionService.deleteFolder(id);
     await get().loadFolders(collectionId);
+  },
+
+  importCollectionData: async (collection: Collection, folders: Folder[], requests: any[]) => {
+    await collectionService.importCollectionData(collection, folders, requests);
+    await get().loadCollections();
   }
 }));

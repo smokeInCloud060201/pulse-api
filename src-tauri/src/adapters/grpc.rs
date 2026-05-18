@@ -2,7 +2,7 @@ use std::time::Instant;
 use std::fs;
 use std::env;
 use std::str::FromStr;
-use reqwest::{Client, Method, Version, header::{HeaderMap, HeaderValue, CONTENT_TYPE}};
+use reqwest::{Client, Method, header::{HeaderMap, HeaderValue, CONTENT_TYPE}};
 use prost_reflect::{DescriptorPool, DynamicMessage};
 use prost::Message;
 
@@ -110,7 +110,7 @@ pub async fn send_grpc_request(req: &ApiRequest) -> Result<ApiResponse, String> 
     let size_bytes = resp_bytes.len();
 
     // 9. Decode gRPC framing
-    let mut response_json = String::new();
+    let response_json;
     if size_bytes >= 5 {
         let is_compressed = resp_bytes[0] == 1;
         if is_compressed {

@@ -2,7 +2,6 @@ use crate::db::DbState;
 use crate::models::environment::{EnvVariable, Environment};
 use rusqlite::params;
 use tauri::State;
-use std::sync::MutexGuard;
 
 #[tauri::command]
 pub fn create_environment(state: State<'_, DbState>, id: String, name: String) -> Result<Environment, String> {
